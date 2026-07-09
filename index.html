@@ -14,13 +14,8 @@
   <link rel="apple-touch-icon" href="icon.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="icon.png" />
   <title>TotalParking</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mapbox-gl@3/dist/mapbox-gl.css" />
-  <script src="https://cdn.jsdelivr.net/npm/mapbox-gl@3/dist/mapbox-gl.js"></script>
-  <script>
-    // Mapbox GL JS: oma Mapbox-tyyli + access token
-    mapboxgl.accessToken = 'pk.eyJ1IjoiZWxpYXMxOTk4IiwiYSI6ImNtcWdodHpmMDAwZXUydHM1OXR6eDRxb3UifQ.sEKSaKfCn8sUp644g11u9Q';
-    const MAPBOX_STYLE = 'mapbox://styles/elias1998/cmilnunoy00qz01qt8ghv22tu';
-  </script>
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.25.0/mapbox-gl.css" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.25.0/mapbox-gl.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -44,8 +39,10 @@
         left: 0;
       }
     }
-    .mapboxgl-ctrl-attrib { display: none !important; }
-    .mapboxgl-ctrl { display: none !important; }
+    /* Mapbox-attribuutio ja -logo pidetään näkyvissä — Mapboxin käyttöehdot
+       vaativat ne. Vain kontrollinappiryhmät (esim. geolocate-nappi)
+       piilotetaan; paikannus laukaistaan sovelluksen omasta napista. */
+    .mapboxgl-ctrl-group { display: none !important; }
     /* ── Unified center marker ────────────────────────────────────────
        One element that morphs between two states:
        - Collapsed (default): just the P pin
@@ -183,7 +180,7 @@
        the sweeping tail keeps its tip on the exact same map point. */
     #center-marker.expanded #cm-tail { margin-top: -3px; }
 
-    /* MapLibre DOM markers (e.g. the red search-result pin) sit below the
+    /* Mapbox GL DOM markers (e.g. the red search-result pin) sit below the
        P-marker so they can't peek out from behind it. */
     .mapboxgl-marker { z-index: 5; }
     
@@ -191,7 +188,7 @@
     /* (Splash screen removed — app now opens directly to the map.) */
 
     /* ── User location indicator — direction arrow (Apple Maps style) ─
-       MapLibre's native heading cone is hidden; we render our own arrow
+       Mapbox GL's native heading cone is hidden; we render our own arrow
        inside the user-location-dot, rotated via JS using DeviceOrientation
        data (after the user grants compass permission on iOS). */
     .mapboxgl-user-location-dot {
@@ -202,8 +199,9 @@
       box-shadow: 0 0 0 1px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.25) !important;
       position: relative !important;
     }
-    /* Hide MapLibre's own cone-shaped heading indicator — we use our own */
+    /* Hide Mapbox GL's own cone-shaped heading indicator — we use our own */
     .mapboxgl-user-location-dot-heading { display: none !important; }
+    .mapboxgl-user-location-show-heading .mapboxgl-user-location-heading { display: none !important; }
     /* Custom direction arrow. Positioned dead-center over the user dot;
        a transform chain rotates first, then translates outward — so the
        arrow's base ends up flush against the dot's edge in the rotated
@@ -1447,7 +1445,7 @@
     }
 
     /* "Pin drop" animation. The animation must NOT be applied directly to
-       the MapLibre marker element, because MapLibre sets the marker's
+       the Mapbox GL marker element, because Mapbox GL sets the marker's
        `transform` property to position it on the map — our keyframes
        would clobber that and the pin would appear at the wrong place
        (often off-screen). Instead we wrap the visible pin in a child
@@ -1571,6 +1569,13 @@
     }
     #filter-close-btn { position: absolute; right: 16px; top: 10px; width: 28px; height: 28px; background: #f0f0f0; border: none; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 16px; color: #555; z-index: 5; }
     #filter-close-btn.visible { display: flex; }
+    /* "Palauta" pill — same shape as the Suodata button in Pysäköintitapahtumat,
+       but dark-blue text on white with a thin dark-blue outline. Sits just left
+       of the ✕, on the same line as the "Suodata karttanäkymää" title. Hidden
+       until a filter control differs from its app-open default. */
+    #filter-reset-btn { position: absolute; right: 52px; top: 11px; height: 26px; padding: 0 14px; background: #fff; border: 1px solid #0C0243; border-radius: 13px; font-size: 13px; font-weight: 500; color: #0C0243; cursor: pointer; font-family: Arial, sans-serif; display: none; align-items: center; justify-content: center; z-index: 5; }
+    #filter-reset-btn.visible { display: inline-flex; }
+    #filter-reset-btn:active { background: #f2f2f7; }
     #sheet-normal { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
     #sheet-summary { padding: 13px 20px 8px 20px; flex-shrink: 0; font-family: Arial, sans-serif; }
     #summary-header { font-size: 15px; font-weight: bold; color: #222; margin-bottom: 3px; }
@@ -1814,7 +1819,9 @@
       position: absolute;
       top: 3px; bottom: 3px; left: 3px;
       width: calc((100% - 6px) / 3);
-      background: #7F1F89;
+      box-sizing: border-box;
+      background: rgba(127, 31, 137, 0.85);
+      border: 1.5px solid #0C0243;
       border-radius: 8px;
       transition: transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94);
       z-index: 0;
@@ -1833,7 +1840,7 @@
       cursor: pointer;
       transition: color 0.2s ease;
     }
-    .seg-option.active { color: white; }
+    .seg-option.active { color: #ffffff; opacity: 1; }
     #free-mode-info {
       margin-top: 10px;
       font-size: 12px;
@@ -1841,6 +1848,15 @@
       text-align: center;
       line-height: 1.4;
     }
+    /* Ajanhetki (reference-time) row: clock on the left, drum on the right */
+    #ref-time-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+    #ref-time-left { flex: 1; }
+    #ref-time-label { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-family: Arial, sans-serif; }
+    #ref-time-value { font-size: 26px; font-weight: bold; color: #0C0243; line-height: 1; font-family: Arial, sans-serif; transition: color 0.2s ease; }
+    #ref-time-value.manual { color: #1266f1; }
+    #ref-time-day { font-size: 12px; color: #888; margin-top: 4px; font-family: Arial, sans-serif; }
+    #ref-time-reset { display: none; margin-top: 6px; border: none; background: none; padding: 0; font-size: 12px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
+    #ref-time-reset.visible { display: inline-block; }
 
     #slider-label { font-size: 15px; color: #222; margin-bottom: 10px; text-align: center; }
     #slider-value { font-weight: bold; color: #0C0243; font-size: 17px; }
@@ -3145,14 +3161,91 @@
       border-bottom: 1px solid #f0f0f0;
     }
     .detail-row:last-child { border-bottom: none; }
+    /* Rivi juuri ennen "Yhteensä"-riviä (ALV): piilota vaalea alaviiva, jotta
+       ALV:n ja Yhteensän väliin jää vain yksi paksu viiva. */
+    .detail-row:has(+ .detail-row.total) { border-bottom: none; }
     .detail-row.total {
       font-weight: bold; font-size: 16px;
       border-top: 2px solid #ddd;
-      padding-top: 12px;
-      margin-top: 8px;
     }
     .detail-label { color: #555; }
     .detail-value { color: #222; }
+    /* ── Maksuerittelyn aikajana ── */
+    #price-detail-sheet .sheet-panel { display: flex; flex-direction: column; max-height: 86vh; }
+    #price-detail-sheet .price-detail-content { flex-shrink: 0; }
+    /* Ikkunamainen kehys: pyöristetty suorakulmio, kiinteä korkeus, sisältö
+       vierii ikkunan sisällä jos aikajana on pidempi. */
+    #paid-timeline-section { display: none; margin: 0 16px 4px; flex-shrink: 0; }
+    #paid-timeline-section.visible { display: block; }
+    #paid-timeline-wrap {
+      height: 21vh;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      background: #fff;
+      border: 1px solid #e6e6e6;
+      border-radius: 14px;
+      padding: 10px 8px;
+      box-sizing: border-box;
+    }
+    #paid-timeline-wrap.ptl-empty { height: auto; }
+    #ptl-legend {
+      display: flex; gap: 18px; justify-content: center;
+      margin: 10px 16px 2px;
+      font-family: Arial, sans-serif; font-size: 12px; color: #555;
+    }
+    #ptl-legend.hidden { display: none; }
+    #ptl-legend i {
+      display: inline-block; width: 12px; height: 12px;
+      border-radius: 3px; margin-right: 6px; vertical-align: -1px;
+    }
+    #ptl-legend .ptl-dot.paid { background: rgba(18, 102, 241, 0.45); }
+    #ptl-legend .ptl-dot.free { background: rgba(127, 31, 137, 0.45); }
+    #paid-timeline { position: relative; }
+    .ptl-hourline { position: absolute; left: 56px; right: 8px; border-top: 1px solid #f0f0f0; }
+    .ptl-hourlabel {
+      position: absolute; left: 0; width: 46px; text-align: right;
+      font-family: Arial, sans-serif; font-size: 12px; color: #999;
+      transform: translateY(-50%);
+    }
+    .ptl-midnight { position: absolute; left: 56px; right: 8px; border-top: 1px dashed #b0b0b0; }
+    .ptl-midlabel {
+      position: absolute; left: 136px; right: 8px; text-align: center;
+      transform: translateY(-50%);
+      font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; color: #8a8a8a;
+    }
+    .ptl-midlabel span { background: #fff; padding: 0 10px; }
+    .ptl-bar {
+      position: absolute; left: 96px; width: 26px;
+      border-radius: 7px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+      z-index: 2;
+    }
+    .ptl-seg { position: absolute; left: 0; right: 0; }
+    .ptl-seg.paid { background: rgba(18, 102, 241, 0.45); }
+    .ptl-seg.free { background: rgba(127, 31, 137, 0.45); }
+    .ptl-edge {
+      position: absolute; left: 88px; width: 42px; height: 3px;
+      background: #0C0243; border-radius: 2px;
+      transform: translateY(-50%); z-index: 3;
+    }
+    .ptl-time {
+      position: absolute; left: 134px;
+      transform: translateY(-50%);
+      font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; color: #0C0243;
+      z-index: 3; white-space: nowrap;
+    }
+    .ptl-now { position: absolute; left: 50px; right: 8px; border-top: 2px solid #ff3b30; z-index: 4; }
+    .ptl-nowdot {
+      position: absolute; left: 50px; width: 8px; height: 8px;
+      border-radius: 50%; background: #ff3b30;
+      transform: translate(-50%, -50%); z-index: 5;
+    }
+    .ptl-startlabel {
+      position: absolute; left: 130px; right: 8px;
+      transform: translateY(-50%); text-align: left;
+      font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; color: #0C0243;
+      z-index: 6;
+    }
+    .ptl-startlabel span { background: #fff; padding: 0 8px; }
 
     #start-btn-container { 
       padding: 10px 14px; 
@@ -4577,7 +4670,7 @@
     <div id="area-code-badge" style="display:none;position:absolute;top:16px;left:16px;z-index:5;background:#0C0243;color:white;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;padding:2px 8px;border-radius:5px;letter-spacing:0.3px;pointer-events:none;"></div>
     <div id="osm-attribution" style="position:absolute;top:-16px;left:8px;z-index:5;font-family:Arial,sans-serif;font-size:10px;color:#000;pointer-events:none;transition:opacity 0.2s ease;">© OpenStreetMap</div>
     <div id="zoom-indicator" style="position:absolute;top:8px;right:16px;z-index:5;color:#999;font-family:Arial,sans-serif;font-size:10px;pointer-events:none;"></div>
-    <div id="drag-handle-area"><div id="drag-handle"></div><button id="filter-close-btn">✕</button></div>
+    <div id="drag-handle-area"><div id="drag-handle"></div><button id="filter-reset-btn" onclick="resetFilters()">Palauta</button><button id="filter-close-btn">✕</button></div>
     <div id="gps-warning">
       <span>GPS-sijaintisi saattaa olla epätarkka</span>
       <span class="gps-info-icon" onclick="openGpsInfo()">i</span>
@@ -4646,6 +4739,23 @@
             <button class="seg-option" data-mode="free" onclick="setFreeFilterMode('free')">Ilmaiset</button>
           </div>
           <div id="free-mode-info">Näytetään kaikki pysäköintialueet kartalla</div>
+
+          <!-- Reference-time drum ("Ajanhetki"): the clock time the free/paid
+               evaluation uses. Defaults to the live clock (30-min steps) and
+               keeps following it until the user rolls the drum; the reset
+               link snaps it back to "now". Rolling past midnight advances the
+               weekday, so ma–pe / la / su fee windows stay correct. -->
+          <div id="ref-time-row">
+            <div id="ref-time-left">
+              <div id="ref-time-label">Ajanhetki</div>
+              <div id="ref-time-value">–</div>
+              <div id="ref-time-day">nykyhetki</div>
+              <button id="ref-time-reset" onclick="resetRefTime()">Palauta nykyhetkeen</button>
+            </div>
+            <div class="drum-scroll-zone" id="ref-drum-zone">
+              <canvas id="ref-drum-canvas" width="52" height="80"></canvas>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -4819,6 +4929,15 @@
         <div class="sheet-title">Maksuerittely</div>
         <button class="sheet-close-btn" onclick="closePriceDetail()">✕</button>
       </div>
+      <div id="paid-timeline-section">
+        <div id="paid-timeline-wrap">
+          <div id="paid-timeline"></div>
+        </div>
+        <div id="ptl-legend">
+          <span><i class="ptl-dot paid"></i>Maksullinen</span>
+          <span><i class="ptl-dot free"></i>Ei maksua</span>
+        </div>
+      </div>
       <div class="price-detail-content">
         <div class="detail-row">
           <span class="detail-label">Pysäköintimaksu</span>
@@ -4918,6 +5037,7 @@
   </div>
 
   <script>
+    console.log('BUILD: 2026-07-08 zoom13-kynnys');
     // ── Lock screen orientation to portrait ────────────────────────────
     // Works reliably in PWA/standalone mode (when app is added to home screen).
     // Inside a regular browser tab, browsers restrict orientation lock — the
@@ -4945,11 +5065,27 @@
 
     const API_KEY = 'a002614565b24559b3feddfca8d01918';
 
+    // ── Mapbox ──────────────────────────────────────────────────────────────
+    // Public token. HUOM: tämä on tilin oletustoken, johon EI voi lisätä URL-
+    // rajoituksia. Luo account.mapbox.com → Tokens-sivulla uusi token, jolle
+    // asetat URL-rajoitukset, ja vaihda se tähän.
+    const MAPBOX_TOKEN = 'pk.eyJ1IjoiZWxpYXMxOTk4IiwiYSI6ImNtcWdodHpmMDAwZXUydHM1OXR6eDRxb3UifQ.sEKSaKfCn8sUp644g11u9Q';
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    // Päivätyyli: muokataan Mapbox Studiossa. Publish-nappi Studiossa julkaisee
+    // muutokset — ne näkyvät sovelluksessa seuraavalla latauksella ilman
+    // koodimuutoksia.
+    const MAPBOX_STYLE_DAY  = 'mapbox://styles/elias1998/cmrdfv8xk000j01s77gpl4n21';
+    // TODO: kun tumma tyyli on luotu Studiossa, laita sen URL tähän — Tumma
+    // tila -kytkin alkaa silloin vaihtaa karttatyyliä automaattisesti.
+    const MAPBOX_STYLE_DARK = null;
+
     // Supabase
     const SUPABASE_URL = 'https://glphxelazjodpiekmoew.supabase.co';
     const PARKING_TILES_URL = 'https://glphxelazjodpiekmoew.supabase.co/functions/v1/parking-tiles';
     const SUPABASE_KEY = 'sb_publishable_MEZLuJOl-QsZxgLZI3nnTA_e-xL5VQW';
-    function transformRequest(url) { if (url.includes('digitransit.fi')) return { url, headers: { 'digitransit-subscription-key': API_KEY } }; return { url }; }
+    // Karttatiilet tulevat nyt Mapboxilta (token asetetaan mapboxgl.accessTokenilla),
+    // joten Digitransitin transformRequest-apuria ei enää tarvita. Geokoodaushaku
+    // lisää digitransit-subscription-keyn suoraan fetch-otsakkeisiin.
 
     // ── Helsinki parking zones — extracted from maksuvyohykkeet.pdf ─────
     // Polygons trace the dark-green (Vyöhyke 1) and light-green (Vyöhyke 2)
@@ -5253,17 +5389,16 @@
 
     // Dark-mode preference (persisted). Chooses which HSL style JSON to load.
     let darkModeEnabled = (function(){ try { return localStorage.getItem('tp_darkmode') === '1'; } catch(e){ return false; } })();
-    const _mapStyleUrl = darkModeEnabled ? MAPBOX_STYLE : MAPBOX_STYLE;
+    const _mapStyleUrl = (darkModeEnabled && MAPBOX_STYLE_DARK) ? MAPBOX_STYLE_DARK : MAPBOX_STYLE_DAY;
     const map = new mapboxgl.Map({
       container: 'map',
       style: _mapStyleUrl,
-      projection: 'mercator',
       center: _sharedInitialCenter || [24.932096, 60.167370],
       zoom:   _sharedInitialZoom   || 16,
       minZoom: 5, maxZoom: 20,
-      transformRequest, maxTileCacheSize: 50, fadeDuration: 100,
+      maxTileCacheSize: 50, fadeDuration: 100,
       dragRotate: false, touchPitch: false, pitchWithRotate: false,
-      keyboard: false, attributionControl: false
+      keyboard: false
     });
     map.touchZoomRotate.disableRotation();
 
@@ -5493,8 +5628,8 @@
       applyHeadingToUserDot();
     }
 
-    // Ensure our custom arrow element exists inside MapLibre's user dot.
-    // MapLibre creates the dot only after the first successful geolocate, so
+    // Ensure our custom arrow element exists inside Mapbox GL's user dot.
+    // Mapbox GL creates the dot only after the first successful geolocate, so
     // we re-check whenever a heading update arrives.
     function ensureUserDotArrow() {
       const dot = document.querySelector('.mapboxgl-user-location-dot');
@@ -5520,7 +5655,7 @@
         `translate(-50%, -50%) rotate(${_currentHeading}deg) translateY(-22px)`;
     }
 
-    // If a geolocate happens after compass is already enabled, MapLibre may
+    // If a geolocate happens after compass is already enabled, Mapbox GL may
     // recreate the dot element — re-attach the arrow.
     geolocate.on('geolocate', () => {
       if (_compassEnabled) {
@@ -5925,11 +6060,11 @@
       const center=map.getCenter(), zoom=map.getZoom();
       if(!areaMap){
         areaMap=new mapboxgl.Map({
-          container:'area-map', style:MAPBOX_STYLE,
+          container:'area-map', style:MAPBOX_STYLE_DAY,
           center:[center.lng,center.lat], zoom,
-          minZoom:5, maxZoom:20, transformRequest,
+          minZoom:5, maxZoom:20,
           dragRotate:false, touchPitch:false, pitchWithRotate:false,
-          keyboard:false, attributionControl:false
+          keyboard:false
         });
         areaMap.on('load',()=>{ areaMap.touchZoomRotate.disableRotation(); areaMap.dragRotate.disable(); initAreaCornersAndPolygon(); });
         areaMap.on('move',()=>{
@@ -5940,7 +6075,7 @@
         });
       } else {
         areaMap.resize(); areaMap.setCenter([center.lng,center.lat]); areaMap.setZoom(zoom);
-        areaMap.setStyle(MAPBOX_STYLE);
+        areaMap.setStyle(MAPBOX_STYLE_DAY);
         const safety=setTimeout(()=>{ initAreaCornersAndPolygon(); },8000);
         areaMap.once('style.load',()=>{ clearTimeout(safety); initAreaCornersAndPolygon(); });
       }
@@ -6450,10 +6585,10 @@
       if (!adminPreviewMap) {
         adminPreviewMap = new mapboxgl.Map({
           container: 'admin-preview-map',
-          style: MAPBOX_STYLE,
+          style: MAPBOX_STYLE_DAY,
           center: [cx, cy], zoom,
           dragRotate: false, touchPitch: false, pitchWithRotate: false,
-          keyboard: false, attributionControl: false, transformRequest
+          keyboard: false
         });
         adminPreviewMap.on('load', () => {
           adminPreviewMap.touchZoomRotate.disableRotation();
@@ -6839,6 +6974,37 @@
       }
     }
 
+    // Parses a validity-hour value ("9", "9:30", 9, 9.5) into a decimal hour
+    // (9:30 → 9.5). Returns -1 when the value is missing/invalid so Mapbox GL
+    // filter expressions can test it with a plain numeric comparison.
+    function hourValOf(v) {
+      if (v === null || v === undefined || v === '') return -1;
+      if (typeof v === 'number') return Number.isFinite(v) ? v : -1;
+      const s = String(v).trim();
+      if (s.indexOf(':') !== -1) {
+        const parts = s.split(':');
+        const hh = parseFloat(parts[0]), mm = parseFloat(parts[1]);
+        if (!Number.isFinite(hh)) return -1;
+        return hh + (Number.isFinite(mm) ? mm / 60 : 0);
+      }
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : -1;
+    }
+
+    // Numeric fee-window properties for the map filter (Ajanhetki drum):
+    // v_mf/v_mt = ma–pe from/to, v_lf/v_lt = la, v_sf/v_st = su, all as
+    // decimal hours (-1 = not defined). v_any = true if ANY window exists.
+    function validityProps(r) {
+      const p = {
+        v_mf: hourValOf(r.valid_mape_from), v_mt: hourValOf(r.valid_mape_to),
+        v_lf: hourValOf(r.valid_la_from),   v_lt: hourValOf(r.valid_la_to),
+        v_sf: hourValOf(r.valid_su_from),   v_st: hourValOf(r.valid_su_to)
+      };
+      p.v_any = (p.v_mf !== -1 || p.v_mt !== -1 || p.v_lf !== -1 ||
+                 p.v_lt !== -1 || p.v_sf !== -1 || p.v_st !== -1);
+      return p;
+    }
+
     let _lastMasterRows = null;
     let _lastHalliGeoJSON = null;
     async function renderMasterRows(rows) {
@@ -6858,7 +7024,8 @@
               valid_la_from: r.valid_la_from ?? '',
               valid_la_to: r.valid_la_to ?? '',
               valid_su_from: r.valid_su_from ?? '',
-              valid_su_to: r.valid_su_to ?? ''
+              valid_su_to: r.valid_su_to ?? '',
+              ...validityProps(r)
             },
             geometry: r.polygon_coordinates
           }));
@@ -6878,7 +7045,7 @@
         map.addSource('master-polygons', { type:'geojson', data: geojson, generateId: true });
 
         // Base fill layer
-        map.addLayer({ id:'master-poly-fill', type:'fill', source:'master-polygons', minzoom:13.8,
+        map.addLayer({ id:'master-poly-fill', type:'fill', source:'master-polygons', minzoom:13,
           paint:{ 'fill-opacity': 0.20,
             'fill-color': ['match', ['get','source'],
               'community',          '#7F1F89',
@@ -6895,7 +7062,7 @@
           }
         });
         // Base line layer
-        map.addLayer({ id:'master-poly-line', type:'line', source:'master-polygons', minzoom:13.8,
+        map.addLayer({ id:'master-poly-line', type:'line', source:'master-polygons', minzoom:13,
           paint:{ 'line-width': 1.0, 'line-opacity': 0.55,
             'line-color': ['match', ['get','source'],
               'community',          '#611868',
@@ -6907,22 +7074,22 @@
           }
         });
         // Hover fill — red, toggled via setFilter
-        map.addLayer({ id:'master-poly-hover-fill', type:'fill', source:'master-polygons', minzoom:13.8,
+        map.addLayer({ id:'master-poly-hover-fill', type:'fill', source:'master-polygons', minzoom:13,
           paint:{ 'fill-color':'#1266f1', 'fill-opacity': 0.45 },
           filter:['==', ['get','id'], '__none__']
         });
         // Hover outline — on the red hovered area, toggled via setFilter
-        map.addLayer({ id:'master-poly-hover-line', type:'line', source:'master-polygons', minzoom:13.8,
+        map.addLayer({ id:'master-poly-hover-line', type:'line', source:'master-polygons', minzoom:13,
           paint:{ 'line-color':'#0B49D0', 'line-width': 2.5, 'line-opacity': 1.0 },
           filter:['==', ['get','id'], '__none__']
         });
         // Group highlight line — thick dark, toggled via setFilter
-        map.addLayer({ id:'master-poly-group-line', type:'line', source:'master-polygons', minzoom:13.8,
+        map.addLayer({ id:'master-poly-group-line', type:'line', source:'master-polygons', minzoom:13,
           paint:{ 'line-color':'#0C0243', 'line-width': 1.25, 'line-opacity': 1.0 },
           filter:['==', ['get','id'], '__none__']
         });
         // Same-group fill highlight — 50% opacity, same colors as base, toggled via setFilter
-        map.addLayer({ id:'master-poly-group-fill', type:'fill', source:'master-polygons', minzoom:13.8,
+        map.addLayer({ id:'master-poly-group-fill', type:'fill', source:'master-polygons', minzoom:13,
           paint:{ 'fill-opacity': 0.50,
             'fill-color': ['match', ['get','source'],
               'community',          '#7F1F89',
@@ -7273,7 +7440,7 @@
         if (hoveredHalliId !== null) { hoveredHalliId = null; collapseCenterSheet(); }
         return false;
       };
-      if (map.getZoom() < 12 || !map.getLayer('halli-icons')) return leaveHalli();
+      if (map.getZoom() < 13 || !map.getLayer('halli-icons')) return leaveHalli();
       const hpt = map.project(map.getCenter()); hpt.y += 6.5;
       const hr = 1;
       const hhits = map.queryRenderedFeatures([[hpt.x-hr, hpt.y-hr],[hpt.x+hr, hpt.y+hr]], { layers:['halli-icons'] });
@@ -7302,7 +7469,7 @@
       if (window._navigationInProgress) return;
       // A charging station under the P-marker takes priority and reacts in real
       // time during the drag (no finger-lift needed), like parking areas.
-      if (showEvCharging && map.getLayer('charging-icons') && map.getZoom() >= 12) {
+      if (showEvCharging && map.getLayer('charging-icons') && map.getZoom() >= 13) {
         const ccpt = map.project(map.getCenter()); ccpt.y += 6.5;
         const cr = 1;
         const chits = map.queryRenderedFeatures([[ccpt.x-cr, ccpt.y-cr],[ccpt.x+cr, ccpt.y+cr]], { layers:['charging-icons'] });
@@ -7500,8 +7667,8 @@
       // Filter view manages its own P-marker visibility (hidden); don't
       // fight it from here.
       const inFilter = (typeof filterMode !== 'undefined' && filterMode);
-      // Manage sheet height: zoom < 12 → slim 60px (GPS warning hidden),
-      // zoom ≥ 12 → 90px strip (GPS warning visible). Only when no area is
+      // Manage sheet height: zoom < 13 → slim 60px (GPS warning hidden),
+      // zoom ≥ 13 → 90px strip (GPS warning visible). Only when no area is
       // selected and we're not in a navigation or filter flow.
       const _noArea = !masterFeatureLocked && !hoveredPolyId &&
                       !(typeof hoveredChargingId !== 'undefined' && hoveredChargingId) &&
@@ -7509,18 +7676,18 @@
       const _bs = document.getElementById('bottom-sheet');
       if (_bs && _noArea && !inNav && !inFilter) {
         const _t = _bs.style.transform || '';
-        if (zoom < 13.8 && !_t.includes('- 60px')) {
+        if (zoom < 13 && !_t.includes('- 60px')) {
           _bs.style.transition = 'transform 0.3s ease';
           _bs.style.transform = 'translateY(calc(100% - 60px))';
           const gw = document.getElementById('gps-warning'); if (gw) gw.classList.remove('visible');
-        } else if (zoom >= 13.8 && (_t === '' || _t.includes('- 60px'))) {
+        } else if (zoom >= 13 && (_t === '' || _t.includes('- 60px'))) {
           _bs.style.transition = 'transform 0.3s ease';
           _bs.style.transform = 'translateY(calc(100% - 90px))';
           currentY = _bs.offsetHeight - 90;
           const gw = document.getElementById('gps-warning'); if (gw) gw.classList.add('visible');
         }
       }
-      if (zoom < 13.8) {
+      if (zoom < 13) {
         setActionBtnText('Lähennä karttaa');
         btn.classList.remove('active');
         // Also hide the P-marker — polygons and halli icons are hidden by
@@ -7549,7 +7716,7 @@
       btn.classList.remove('active');
     }
 
-    // ── Hover + touch highlight (MapLibre fires synthetic mouse events on iOS too) ──
+    // ── Hover + touch highlight (Mapbox GL fires synthetic mouse events on iOS too) ──
     map.on('mouseenter', 'master-poly-fill', (e) => {
       if (!e.features.length) return;
       map.getCanvas().style.cursor = 'pointer';
@@ -7653,7 +7820,7 @@
           map.getSource('halli-points').setData(halliGeoJSON);
           return;
         }
-        // Register canvas icon with MapLibre
+        // Register canvas icon with Mapbox GL
         if (!map.hasImage('halli-icon')) {
           const imgData = createHalliIconCanvas();
           map.addImage('halli-icon', imgData, { pixelRatio: 2 });
@@ -7673,7 +7840,7 @@
       }
       map.addSource('halli-points', { type:'geojson', data: geojson });
       map.addLayer({
-        id: 'halli-icons', type: 'symbol', source: 'halli-points', minzoom: 13.8,
+        id: 'halli-icons', type: 'symbol', source: 'halli-points', minzoom: 13,
         layout: {
           'icon-image': 'halli-icon', 'icon-size': 0.50,
           'icon-allow-overlap': true, 'icon-anchor': 'center'
@@ -7815,10 +7982,10 @@
     async function initEditorMap() {
       if (!editorMap) {
         editorMap = new mapboxgl.Map({
-          container:'editor-map', style:MAPBOX_STYLE,
+          container:'editor-map', style:MAPBOX_STYLE_DAY,
           center:map.getCenter(), zoom:map.getZoom(),
-          minZoom:5, maxZoom:20, transformRequest,
-          dragRotate:false, attributionControl:false
+          minZoom:5, maxZoom:20,
+          dragRotate:false
         });
         editorMap.on('load', async () => {
           editorMap.touchZoomRotate.disableRotation();
@@ -9180,7 +9347,12 @@
       onSettingToggle(input);
       darkModeEnabled = input.checked;
       try { localStorage.setItem('tp_darkmode', darkModeEnabled ? '1' : '0'); } catch(e){}
-      const url = darkModeEnabled ? MAPBOX_STYLE : MAPBOX_STYLE;
+      // TODO tumma karttatyyli: niin kauan kuin MAPBOX_STYLE_DARK on null,
+      // kytkin tallentaa vain asetuksen ja kartta pysyy päivätyylissä. Kun
+      // tumma tyyli on luotu Studiossa ja sen URL asetettu, tyylinvaihto ja
+      // kerrosten uudelleenlisäys alla toimivat sellaisenaan.
+      if (!MAPBOX_STYLE_DARK) return;
+      const url = darkModeEnabled ? MAPBOX_STYLE_DARK : MAPBOX_STYLE_DAY;
       // setStyle() wipes ALL custom sources, layers and images. Re-add them once
       // the new style is ready. 'style.load' can be missed, so we also poll
       // isStyleLoaded() and keep a timeout fallback; a guard prevents double runs.
@@ -9419,6 +9591,9 @@
     const zoomIndicator = document.getElementById('zoom-indicator');
 
     function updateZoomIndicator() {
+      // Never show the zoom readout while the filter sheet is open — it would
+      // otherwise pop back on the next map move (openFilter hides it once).
+      if (filterMode) { zoomIndicator.style.display = 'none'; return; }
       const z = map.getZoom();
       if (z < 12) {
         zoomIndicator.style.display = 'none';
@@ -9702,10 +9877,10 @@
       };
       if (!locEditMap) {
         locEditMap = new mapboxgl.Map({
-          container: 'loc-edit-map', style: MAPBOX_STYLE,
+          container: 'loc-edit-map', style: MAPBOX_STYLE_DAY,
           center: [center.lng, center.lat], zoom: zoom,
-          minZoom: 5, maxZoom: 20, transformRequest,
-          dragRotate: false, attributionControl: false
+          minZoom: 5, maxZoom: 20,
+          dragRotate: false
         });
         locEditMap.on('load', () => {
           locEditMap.touchZoomRotate.disableRotation();
@@ -10352,20 +10527,122 @@
       }
       filterResult.textContent=''; // Always empty now
     }
+    // ── Ajanhetki (reference time) for the free/paid map filter ─────────
+    // refMinutes = minutes from today 00:00 (may exceed 1440 when the drum is
+    // rolled past midnight → weekday advances, so ma–pe / la / su windows
+    // resolve correctly). Follows the live clock until the user touches the
+    // drum (refTimeManual); resetRefTime() returns to live mode.
+    const REF_STEP_MIN = 30;                  // drum snaps to 30-minute steps
+    const REF_PX_PER_MIN = 0.8;               // drag pixels per minute (≈24 px/step)
+    const REF_MAX_MIN = 7 * 1440 - REF_STEP_MIN; // at most a week ahead
+    let refTimeManual = false;
+    let refMinutes = 0;
+    let refDrumPhase = 0;
+    let refTickerId = null;
+    let _refLastApplied = -1;
+
+    // Live mode ("nykyhetki") follows the real clock minute by minute — no
+    // rounding. Only manual drum values snap onto the 30-minute grid.
+    function nowRefMinutes() {
+      const n = new Date();
+      return n.getHours() * 60 + n.getMinutes();
+    }
+    function refRoundedMinutes() {
+      return Math.max(0, Math.min(Math.round(refMinutes / REF_STEP_MIN) * REF_STEP_MIN, REF_MAX_MIN));
+    }
+    // Effective minutes-from-today-00:00 the filter/UI uses: exact real time
+    // in live mode, 30-min-snapped drum value in manual mode.
+    function refEffectiveMinutes() {
+      return refTimeManual ? refRoundedMinutes() : nowRefMinutes();
+    }
+    function getRefDate() {
+      const d = new Date(); d.setHours(0, 0, 0, 0);
+      return new Date(d.getTime() + refEffectiveMinutes() * 60000);
+    }
+    function updateRefTimeUI() {
+      const valEl = document.getElementById('ref-time-value');
+      if (!valEl) return;
+      const d = getRefDate();
+      valEl.textContent = d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
+      valEl.classList.toggle('manual', refTimeManual);
+      const resetB = document.getElementById('ref-time-reset');
+      if (resetB) resetB.classList.toggle('visible', refTimeManual);
+      const dayEl = document.getElementById('ref-time-day');
+      if (dayEl) {
+        if (!refTimeManual) { dayEl.textContent = 'nykyhetki'; }
+        else {
+          const diffDays = Math.floor(refEffectiveMinutes() / 1440);
+          if      (diffDays === 0) dayEl.textContent = 'tänään';
+          else if (diffDays === 1) dayEl.textContent = 'huomenna';
+          else {
+            const dn = ['su', 'ma', 'ti', 'ke', 'to', 'pe', 'la'];
+            dayEl.textContent = dn[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.';
+          }
+        }
+      }
+    }
+    // Re-applies the map filter, but only when the effective time (exact
+    // minute in live mode, snapped 30-min step in manual mode) has actually
+    // changed (cheap enough to call on every drum-drag frame).
+    function refreshRefFilter(force) {
+      const r = refEffectiveMinutes();
+      if (!force && r === _refLastApplied) { updateRefTimeUI(); return; }
+      _refLastApplied = r;
+      updateRefTimeUI();
+      updateFreeModeInfo();
+      applyRangeFilter();
+      requestAnimationFrame(checkParking);
+    }
+    function resetRefTime() {
+      refTimeManual = false;
+      refMinutes = nowRefMinutes();
+      refreshRefFilter(true);
+    }
+    function startRefTicker() {
+      stopRefTicker();
+      refTickerId = setInterval(() => {
+        if (!refTimeManual) { refMinutes = nowRefMinutes(); refreshRefFilter(); }
+      }, 10000);
+    }
+    function stopRefTicker() {
+      if (refTickerId) { clearInterval(refTickerId); refTickerId = null; }
+    }
+
     function applyRangeFilter(){
       if (!map.getLayer('master-poly-fill')) return;
       const parts = ['all'];
       const FREE_SOURCES = ['community','hel_ilmainen_pitka','hel_ilmainen_lyhyt','hel_sallittu_kiellon_ulkopuolella'];
-      // Source visibility
+      // Source visibility + time-aware colouring
       let srcFilter = null;
+      let freeAtRef = null;   // expression: "free at the Ajanhetki time" (null → static colours)
+      const isFreeSrc = ['in', ['get','source'], ['literal', FREE_SOURCES]];
       if (!showFreeParking) {
-        // Free disabled → show paid only (hide free)
-        srcFilter = ['!', ['in', ['get','source'], ['literal', FREE_SOURCES]]];
-      } else if (freeFilterMode === 'paid') {
-        srcFilter = ['!', ['in', ['get','source'], ['literal', FREE_SOURCES]]];
-      } else if (freeFilterMode === 'free') {
-        srcFilter = ['in', ['get','source'], ['literal', FREE_SOURCES]];
-      } // 'all' → no source restriction
+        // Free disabled → show paid only (hide free); no time evaluation
+        srcFilter = ['!', isFreeSrc];
+      } else {
+        // Time-aware free/paid: a *paid* area counts as free whenever the
+        // Ajanhetki clock falls outside its fee window (ma–pe / la / su).
+        // Rules (mirrors the payment-timeline logic):
+        //   – no window data at all          → paid around the clock
+        //   – other days defined, today not  → free the whole day
+        //   – otherwise paid when from ≤ h < to
+        const d = getRefDate();
+        const dow = d.getDay();
+        const fF = dow === 0 ? 'v_sf' : dow === 6 ? 'v_lf' : 'v_mf';
+        const fT = dow === 0 ? 'v_st' : dow === 6 ? 'v_lt' : 'v_mt';
+        const H = d.getHours() + d.getMinutes() / 60;
+        const paidNow = ['case',
+          ['!', ['to-boolean', ['coalesce', ['get','v_any'], false]]], true,
+          ['any', ['==', ['coalesce', ['get', fF], -1], -1],
+                  ['==', ['coalesce', ['get', fT], -1], -1]], false,
+          ['all', ['>=', H, ['to-number', ['coalesce', ['get', fF], -1]]],
+                  ['<',  H, ['to-number', ['coalesce', ['get', fT], -1]]]]
+        ];
+        freeAtRef = ['any', isFreeSrc, ['!', paidNow]];
+        if      (freeFilterMode === 'free') srcFilter = freeAtRef;             // inherently free OR fee not in force
+        else if (freeFilterMode === 'paid') srcFilter = ['all', ['!', isFreeSrc], paidNow]; // fee in force
+        // 'all' → no source restriction, but colours still follow the clock
+      }
       if (srcFilter) parts.push(srcFilter);
       // Time range
       const a = parseInt(sliderMin.value), b = parseInt(sliderMax.value);
@@ -10377,7 +10654,30 @@
       const f = parts.length === 1 ? null : parts;
       map.setFilter('master-poly-fill', f);
       map.setFilter('master-poly-line', f);
+      applyTimeAwareColors(freeAtRef);
       updateHalliVisibility();   // garages are paid → follow the paid/free filter
+      updateResetBtnVisibility();
+    }
+    // ── Time-aware map colours ──────────────────────────────────────────
+    // Paid areas whose fee is NOT in force at the Ajanhetki time render in
+    // the free purple. freeExpr=null restores the plain source-based colours
+    // (same values the layers were created with).
+    const TA_FREE_FILL = '#7F1F89', TA_PAID_FILL = '#1266f1';
+    const TA_FREE_LINE = '#611868', TA_PAID_LINE = '#0B49D0';
+    const TA_STATIC_FILL = ['match', ['get','source'],
+      'community', TA_FREE_FILL, 'hel_ilmainen_pitka', TA_FREE_FILL,
+      'hel_ilmainen_lyhyt', TA_FREE_FILL, 'hel_sallittu_kiellon_ulkopuolella', TA_FREE_FILL,
+      TA_PAID_FILL];
+    const TA_STATIC_LINE = ['match', ['get','source'],
+      'community', TA_FREE_LINE, 'hel_ilmainen_pitka', TA_FREE_LINE,
+      'hel_ilmainen_lyhyt', TA_FREE_LINE, 'hel_sallittu_kiellon_ulkopuolella', TA_FREE_LINE,
+      TA_PAID_LINE];
+    function applyTimeAwareColors(freeExpr) {
+      const fill = freeExpr ? ['case', freeExpr, TA_FREE_FILL, TA_PAID_FILL] : TA_STATIC_FILL;
+      const line = freeExpr ? ['case', freeExpr, TA_FREE_LINE, TA_PAID_LINE] : TA_STATIC_LINE;
+      if (map.getLayer('master-poly-fill'))       map.setPaintProperty('master-poly-fill', 'fill-color', fill);
+      if (map.getLayer('master-poly-line'))       map.setPaintProperty('master-poly-line', 'line-color', line);
+      if (map.getLayer('master-poly-group-fill')) map.setPaintProperty('master-poly-group-fill', 'fill-color', fill);
     }
     // Parking garages (halli-icons) are paid parking, so they are shown only when
     // paid areas are shown — i.e. NOT in the free-only view, and NOT in the
@@ -10441,31 +10741,52 @@
       if (thumb) {
         thumb.style.transform = `translateX(${idx * 100}%)`;
         // Color reflects the segment: paid=blue, free=purple, all=split (blue→purple)
-        if (mode === 'paid')      thumb.style.background = '#1266f1';
-        else if (mode === 'free') thumb.style.background = '#7F1F89';
-        else                      thumb.style.background = 'linear-gradient(to right, #1266f1 50%, #7F1F89 50%)';
+        if (mode === 'paid')      thumb.style.background = 'rgba(18, 102, 241, 0.85)';
+        else if (mode === 'free') thumb.style.background = 'rgba(127, 31, 137, 0.85)';
+        else                      thumb.style.background = 'linear-gradient(to right, rgba(18, 102, 241, 0.85) 50%, rgba(127, 31, 137, 0.85) 50%)';
       }
       document.querySelectorAll('#free-mode-segmented .seg-option').forEach(b => {
         b.classList.toggle('active', b.dataset.mode === mode);
       });
       // Update explanatory text under the segmented control
-      const info = document.getElementById('free-mode-info');
-      if (info) {
-        if      (mode === 'paid') info.textContent = 'Näytetään maksulliset pysäköintialueet kartalla';
-        else if (mode === 'free') info.textContent = 'Näytetään tällä hetkellä ilmaiset pysäköintialueet kartalla';
-        else                      info.textContent = 'Näytetään kaikki pysäköintialueet kartalla';
-      }
+      updateFreeModeInfo();
       applyRangeFilter();
       requestAnimationFrame(checkParking);
+    }
+    // Explanatory text under the segmented control. Mentions the Ajanhetki
+    // clock when the user has rolled it away from the live time.
+    function updateFreeModeInfo() {
+      const info = document.getElementById('free-mode-info');
+      if (!info) return;
+      if (freeFilterMode === 'all') {
+        info.textContent = 'Näytetään kaikki pysäköintialueet kartalla';
+        return;
+      }
+      const kind = freeFilterMode === 'free' ? 'ilmaiset' : 'maksulliset';
+      if (refTimeManual) {
+        const d = getRefDate();
+        const t = d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
+        info.textContent = 'Näytetään klo ' + t + ' ' + kind + ' pysäköintialueet kartalla';
+      } else {
+        info.textContent = 'Näytetään tällä hetkellä ' + kind + ' pysäköintialueet kartalla';
+      }
     }
     function showFreeSegmented() {
       const seg = document.getElementById('free-mode-segmented');
       if (seg) seg.style.display = 'block';
+      // Ajanhetki drum: start from the live clock every time this opens
+      refTimeManual = false;
+      refMinutes = nowRefMinutes();
+      _refLastApplied = refEffectiveMinutes();
+      updateRefTimeUI();
+      if (typeof drawRefDrum === 'function') drawRefDrum();
+      startRefTicker();
       setFreeFilterMode('all'); // default to all
     }
     function hideFreeSegmented() {
       const seg = document.getElementById('free-mode-segmented');
       if (seg) seg.style.display = 'none';
+      stopRefTicker();
     }
     // Show/hide the max-time slider controls. The selected range stays applied
     // either way — this toggle only reveals or hides the slider UI, it never
@@ -10475,6 +10796,7 @@
       const controls = document.getElementById('maxtime-controls');
       if (controls) controls.style.display = on ? 'block' : 'none';
       if (on) updateSliderUI();
+      updateResetBtnVisibility();
     }
 
     // Public EV charging points toggle (placeholder — data layer to be added later)
@@ -10493,6 +10815,7 @@
       setChargingVisibility(showEvCharging);
       applyChargingFilters();
       updateChargerCount();
+      updateResetBtnVisibility();
     }
     // ── Public charging stations (AFIR / Digitraffic open data) ──────────────
     // Renders charging-point locations as map markers, coloured by real-time
@@ -10666,7 +10989,7 @@
           } else {
             map.addSource('charging-points', { type: 'geojson', data: geojson });
             map.addLayer({
-              id: 'charging-icons', type: 'symbol', source: 'charging-points', minzoom: 12,
+              id: 'charging-icons', type: 'symbol', source: 'charging-points', minzoom: 13,
               layout: {
                 'icon-image': ['case', ['get', 'available'], 'charging-green', 'charging-gray'],
                 'icon-size': 0.25, 'icon-allow-overlap': true, 'icon-ignore-placement': true, 'icon-anchor': 'center'
@@ -10786,7 +11109,7 @@
         });
         _chargingFeatures = _chOrder.map(g => {
           // Per plug-type availability rows for the detail view, stored as a
-          // JSON string so it survives MapLibre's queryRenderedFeatures serialisation.
+          // JSON string so it survives Mapbox GL's queryRenderedFeatures serialisation.
           const connectors = Object.keys(g.byLbl).map(l => ({ name: l, total: g.byLbl[l].total, avail: g.byLbl[l].avail, kw: Math.round(g.byLbl[l].kw), volt: Math.round(g.byLbl[l].volt) }));
           _chargingEvseIndex[g.id] = g.evList;
           return { type: 'Feature', geometry: { type: 'Point', coordinates: g.coords }, properties: {
@@ -11050,6 +11373,7 @@
         });
       }
       map.getSource('charging-points').setData({ type:'FeatureCollection', features: feats });
+      updateResetBtnVisibility();
     }
     // Show a charging station's details in the bottom sheet — same presentation
     // as a parking area under the P-marker.
@@ -11644,6 +11968,7 @@
       sheet.style.transform=`translateY(${window.innerHeight*0.6}px)`;
       currentY=window.innerHeight*0.6;
       btnContainer.classList.add('hidden');
+      updateResetBtnVisibility();
     }
     // Size the filter scroll area so, when the sheet is at its top position
     // (80% of the viewport), the content fills exactly down to the screen
@@ -11657,6 +11982,7 @@
     }
     function closeFilter(){
       filterMode=false;
+      const _rb = document.getElementById('filter-reset-btn'); if (_rb) _rb.classList.remove('visible');
       document.body.classList.remove('filter-mode');
       filterBtn.classList.remove('active');
       filterBtn.classList.remove('filter-on');
@@ -11684,6 +12010,91 @@
     }
     // filterBtn click handled in menuItemClick above
     filterCloseBtn.addEventListener('click',closeFilter);
+
+    // ── "Palauta" (reset filters) ───────────────────────────────────────
+    // True when any filter control differs from its app-open default. Every
+    // sub-control lives behind one of the three group toggles OR the always-
+    // applied max-time range, so checking those covers every case; the extra
+    // sub-control checks add robustness and never fire at the default state.
+    function isFilterModified(){
+      const on = id => { const e = document.getElementById(id); return !!(e && e.checked); };
+      if (on('toggle-free-parking'))   return true;
+      if (on('toggle-maxtime-filter')) return true;
+      if (on('toggle-ev-charging'))    return true;
+      // Max-time range stays applied even if its toggle is later switched off.
+      if (parseInt(sliderMin.value) !== 0 || parseInt(sliderMax.value) !== 26) return true;
+      // Ajanhetki drum rolled away from live time / free segmented off default.
+      if (refTimeManual) return true;
+      if (freeFilterMode !== 'all') return true;
+      // EV sub-controls (only reachable with the EV toggle on, but harmless).
+      const pmin = document.getElementById('power-slider-min');
+      const pmax = document.getElementById('power-slider-max');
+      if (pmin && parseInt(pmin.value) !== 0) return true;
+      if (pmax && parseInt(pmax.value) !== 5) return true;
+      const vb = document.querySelector('#voltage-segmented .seg-option.active');
+      if (vb && vb.dataset.volt !== 'both') return true;
+      if (OPERATORS.length > 0 && _selectedOperators.size !== OPERATORS.length) return true;
+      return false;
+    }
+    function updateResetBtnVisibility(){
+      const btn = document.getElementById('filter-reset-btn');
+      if (!btn) return;
+      btn.classList.toggle('visible', filterMode && isFilterModified());
+    }
+    // Restore every filter control to the state it had when the app opened.
+    function resetFilters(){
+      // Group 1 — free parking + Ajanhetki
+      const fp = document.getElementById('toggle-free-parking');
+      if (fp) fp.checked = false;
+      showFreeParking = false;
+      freeFilterMode = 'all';
+      hideFreeTermsBox();
+      hideFreeSegmented();          // also stops the Ajanhetki ticker
+      refTimeManual = false;
+      refMinutes = nowRefMinutes();
+      refDrumPhase = 0;
+      _refLastApplied = refEffectiveMinutes();
+      setFreeFilterMode('all');     // resets segmented thumb + info text (hidden)
+      updateRefTimeUI();
+      if (typeof drawRefDrum === 'function') drawRefDrum();
+
+      // Group 2 — max parking time
+      const mt = document.getElementById('toggle-maxtime-filter');
+      if (mt) mt.checked = false;
+      const mtc = document.getElementById('maxtime-controls');
+      if (mtc) mtc.style.display = 'none';
+      sliderMin.value = 0; sliderMax.value = 26;
+      updateSliderUI();
+
+      // Group 3 — EV charging
+      const ev = document.getElementById('toggle-ev-charging');
+      if (ev) ev.checked = false;
+      showEvCharging = false;
+      const picker = document.getElementById('charger-picker');
+      if (picker) picker.classList.remove('visible');
+      setChargingVisibility(false);
+      _selectedChargerTypes.clear();
+      document.querySelectorAll('.charger-type-grid .charger-type-tile')
+        .forEach(t => t.classList.remove('selected'));
+      updateChargerCount();
+      const pmin = document.getElementById('power-slider-min');
+      const pmax = document.getElementById('power-slider-max');
+      if (pmin) pmin.value = 0;
+      if (pmax) pmax.value = 5;
+      const pfill = document.getElementById('power-range-fill');
+      if (pfill) { pfill.style.left = '0%'; pfill.style.width = '100%'; }
+      setVoltageMode('both');
+      _selectedOperators = (OPERATORS.length > 0) ? new Set(OPERATORS) : new Set();
+      updateOperatorUI();
+      const dd = document.getElementById('operator-dropdown');
+      if (dd) dd.classList.remove('open');
+
+      // Repaint the map with defaults, then hide the button
+      applyRangeFilter();
+      applyChargingFilters();
+      requestAnimationFrame(checkParking);
+      updateResetBtnVisibility();
+    }
 
     let moveTimer=null;
     // All map updates on moveend only — never on move (avoids 60fps queryRenderedFeatures freeze)
@@ -11756,8 +12167,8 @@
       const zoom=map.getZoom();
 
       // Hide P-marker when zoomed out (matches the master-poly / halli
-      // layer minzoom of 13.8)
-      if(zoom < 13.8) {
+      // layer minzoom of 13)
+      if(zoom < 13) {
         centerPointerEl.classList.add('hidden');
       } else {
         centerPointerEl.classList.remove('hidden');
@@ -11765,7 +12176,7 @@
 
       // A charging station directly under the P-marker takes priority and
       // shows its details in the sheet (same behaviour as a parking area).
-      if(zoom>=12 && showEvCharging && map.getLayer('charging-icons')){
+      if(zoom>=13 && showEvCharging && map.getLayer('charging-icons')){
         const ccpt = map.project(map.getCenter()); ccpt.y += 6.5;
         const cr = 1;
         const cb = [[ccpt.x-cr, ccpt.y-cr],[ccpt.x+cr, ccpt.y+cr]];
@@ -11797,7 +12208,7 @@
       if(detectHalliUnderMarker()) return;
 
       // Highlight parking area under map center (works on mobile & desktop)
-      if(zoom>=13.8 && map.getLayer('master-poly-fill')){
+      if(zoom>=13 && map.getLayer('master-poly-fill')){
         const cpt = map.project(map.getCenter()); cpt.y += 6.5;
         // Detection at P-marker tip: 1px radius (2px diameter point)
         const radius = 1;
@@ -11851,7 +12262,7 @@
         }
       }
       
-      if(zoom<13.8){
+      if(zoom<13){
         summaryHeader.textContent=''; summaryType.textContent='';
         summaryOperator.textContent=''; details.innerHTML='';
         divider.style.display='none';
@@ -11936,6 +12347,9 @@
       return amount.toFixed(2).replace('.', ',') + ' €';
     }
 
+    // Valitun alueen maksuajat (mape/la/su) maksuerittelyn aikajanaa varten.
+    let _parkingAreaValid = null;
+    function _nfv(v){ const n = parseFloat(v); return Number.isFinite(n) ? n : null; }
     let parkingMinutes=0, parkingMaxMinutes=1440, isIlmainen=false;
     let parkingStartTime = null;
     const PIXELS_PER_MINUTE=8, RADIANS_PER_PX=0.055, N_LINES=12;
@@ -11944,7 +12358,8 @@
     const drumCanvas=document.getElementById('drum-canvas');
     const dctx=drumCanvas.getContext('2d');
 
-    function drawDrum(){dctx.clearRect(0,0,CW,CH);for(let x=0;x<CW;x++){const nx=(x-CW/2)/(CW/2);const shade=Math.sqrt(Math.max(0,1-nx*nx));const edge=Math.round(220+shade*20);dctx.fillStyle=`rgb(${edge},${edge},${edge})`;dctx.fillRect(x,0,1,CH);}for(let i=0;i<N_LINES;i++){const alpha=(i/N_LINES)*Math.PI*2+drumPhase;const a=((alpha%(Math.PI*2))+Math.PI*2)%(Math.PI*2);const cosA=Math.cos(a);if(cosA<0)continue;const sinA=Math.sin(a);const y=CY+R*sinA;if(y<1||y>CH-1)continue;const opacity=cosA*0.8;const lineWidth=0.8+cosA*2.2;const colorVal=Math.round(60+(1-cosA)*60);dctx.save();dctx.globalAlpha=opacity;dctx.strokeStyle=`rgb(${colorVal},${colorVal-5},${colorVal+20})`;dctx.lineWidth=lineWidth;dctx.lineCap='round';dctx.beginPath();dctx.moveTo(6,y);dctx.lineTo(CW-6,y);dctx.stroke();dctx.restore();}const tg=dctx.createLinearGradient(0,0,0,24);tg.addColorStop(0,'rgba(232,232,232,0.98)');tg.addColorStop(1,'rgba(232,232,232,0)');dctx.fillStyle=tg;dctx.fillRect(0,0,CW,24);const bg=dctx.createLinearGradient(0,CH-24,0,CH);bg.addColorStop(0,'rgba(232,232,232,0)');bg.addColorStop(1,'rgba(232,232,232,0.98)');dctx.fillStyle=bg;dctx.fillRect(0,CH-24,CW,24);dctx.save();dctx.strokeStyle='rgba(12,2,67,0.18)';dctx.lineWidth=1;dctx.setLineDash([2,2]);dctx.beginPath();dctx.moveTo(4,CY);dctx.lineTo(CW-4,CY);dctx.stroke();dctx.restore();}
+    function drawDrumOn(ctx, phase){ctx.clearRect(0,0,CW,CH);for(let x=0;x<CW;x++){const nx=(x-CW/2)/(CW/2);const shade=Math.sqrt(Math.max(0,1-nx*nx));const edge=Math.round(220+shade*20);ctx.fillStyle=`rgb(${edge},${edge},${edge})`;ctx.fillRect(x,0,1,CH);}for(let i=0;i<N_LINES;i++){const alpha=(i/N_LINES)*Math.PI*2+phase;const a=((alpha%(Math.PI*2))+Math.PI*2)%(Math.PI*2);const cosA=Math.cos(a);if(cosA<0)continue;const sinA=Math.sin(a);const y=CY+R*sinA;if(y<1||y>CH-1)continue;const opacity=cosA*0.8;const lineWidth=0.8+cosA*2.2;const colorVal=Math.round(60+(1-cosA)*60);ctx.save();ctx.globalAlpha=opacity;ctx.strokeStyle=`rgb(${colorVal},${colorVal-5},${colorVal+20})`;ctx.lineWidth=lineWidth;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(6,y);ctx.lineTo(CW-6,y);ctx.stroke();ctx.restore();}const tg=ctx.createLinearGradient(0,0,0,24);tg.addColorStop(0,'rgba(232,232,232,0.98)');tg.addColorStop(1,'rgba(232,232,232,0)');ctx.fillStyle=tg;ctx.fillRect(0,0,CW,24);const bg=ctx.createLinearGradient(0,CH-24,0,CH);bg.addColorStop(0,'rgba(232,232,232,0)');bg.addColorStop(1,'rgba(232,232,232,0.98)');ctx.fillStyle=bg;ctx.fillRect(0,CH-24,CW,24);ctx.save();ctx.strokeStyle='rgba(12,2,67,0.18)';ctx.lineWidth=1;ctx.setLineDash([2,2]);ctx.beginPath();ctx.moveTo(4,CY);ctx.lineTo(CW-4,CY);ctx.stroke();ctx.restore();}
+    function drawDrum(){drawDrumOn(dctx, drumPhase);}
 
     function formatTimeDisplay(mins){if(mins===0)return'0 min';mins=Math.max(1,Math.min(mins,parkingMaxMinutes));if(mins<60)return`${mins} min`;const h=Math.floor(mins/60),m=mins%60;return m>0?`${h} h ${m} min`:`${h} h`;}
 
@@ -12059,11 +12474,153 @@
       document.getElementById('detail-subtotal').textContent = formatPrice(price.subtotal);
       document.getElementById('detail-vat').textContent = formatPrice(price.vat);
       document.getElementById('detail-total').textContent = formatPrice(price.total);
+      _ptlMins = mins;
+      renderPaidTimeline(mins);
+      if (_ptlTimer) clearInterval(_ptlTimer);
+      _ptlTimer = setInterval(() => renderPaidTimeline(_ptlMins), 15000);
       document.getElementById('price-detail-sheet').classList.add('open');
     }
 
     function closePriceDetail() {
+      if (_ptlTimer) { clearInterval(_ptlTimer); _ptlTimer = null; }
       document.getElementById('price-detail-sheet').classList.remove('open');
+    }
+
+    // ── Maksuerittelyn aikajana ──────────────────────────────────────────
+    // Piirtää pystysuoran aikajanan (iOS-kalenterityyliin): tuntiviivat ja
+    // -otsikot vasemmalla, katkoviiva + "ti 7.7." vuorokauden vaihtuessa,
+    // ja kapea palkki pysäköinnin alusta loppuun. Palkin segmentit:
+    // sininen #1266f1 = maksullinen aika, lila #7F1F89 = ilmainen aika.
+    // Alku- ja loppuhetkellä tumma vaakaviiva.
+    // Live-päivitys: kun maksuerittely on auki, aikajana piirtyy uudelleen
+    // ~20 s välein, jolloin alkuaika (= nykyhetki) ja punainen nykyhetki-viiva
+    // seuraavat kelloa minuutin tarkkuudella.
+    let _ptlTimer = null;
+    let _ptlMins  = 0;
+    function renderPaidTimeline(mins) {
+      const sec  = document.getElementById('paid-timeline-section');
+      const wrap = document.getElementById('paid-timeline-wrap');
+      const tl   = document.getElementById('paid-timeline');
+      if (!sec || !wrap || !tl) return;
+      // Näytetään vain pysäköintinäkymän yhteydessä (ei esim. kuittisivulla).
+      const overlayEl = document.getElementById('parking-overlay');
+      if (!overlayEl || !overlayEl.classList.contains('open')) {
+        sec.classList.remove('visible');
+        return;
+      }
+      sec.classList.add('visible');
+
+      const legend = document.getElementById('ptl-legend');
+      if (!mins || mins <= 0) {
+        // Aikaa ei asetettu → piilota koko aikajana-ikkuna (sheet jää pienemmäksi).
+        sec.classList.remove('visible');
+        return;
+      }
+      wrap.classList.remove('ptl-empty');
+      if (legend) legend.classList.remove('hidden');
+
+      const start = new Date();   // aina nykyhetki → aikajana elää kellon mukaan
+      const end   = new Date(start.getTime() + mins * 60000);
+
+      const PX = 34, TOP = 10, BOT = 14;
+      const origin = new Date(start); origin.setMinutes(0, 0, 0);
+      const endCeil = new Date(end);
+      if (end.getMinutes() || end.getSeconds()) endCeil.setHours(endCeil.getHours() + 1);
+      endCeil.setMinutes(0, 0, 0);
+      const totalH = (endCeil - origin) / 3600000;
+      tl.style.height = (TOP + totalH * PX + BOT) + 'px';
+      const yOf = t => TOP + (t - origin.getTime()) / 3600000 * PX;
+
+      // Maksuikkuna viikonpäivän mukaan. Jos KAIKKI kentät puuttuvat →
+      // ei tietoa → koko aika maksullista. Jos osa määritelty mutta tämän
+      // päivän ikkuna puuttuu (esim. su) → päivä on ilmainen.
+      const v = _parkingAreaValid || {};
+      const anyDef = [v.mapeFrom, v.mapeTo, v.laFrom, v.laTo, v.suFrom, v.suTo].some(x => x != null);
+      function winFor(d) {
+        if (!anyDef) return { from: 0, to: 24 };
+        const dow = d.getDay();
+        let f, t;
+        if (dow === 0)      { f = v.suFrom; t = v.suTo; }
+        else if (dow === 6) { f = v.laFrom; t = v.laTo; }
+        else                { f = v.mapeFrom; t = v.mapeTo; }
+        if (f == null || t == null) return null;
+        return { from: f, to: t };
+      }
+      function isPaidAt(ms) {
+        const d = new Date(ms);
+        const w = winFor(d);
+        if (!w) return false;
+        const h = d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+        return h >= w.from && h < w.to;
+      }
+
+      // Segmenttirajat: alku, loppu, vuorokaudenvaihteet ja maksuikkunan
+      // reunat (from/to) jokaiselta aikavälin päivältä.
+      const bset = new Set([start.getTime(), end.getTime()]);
+      const dayIter = new Date(start); dayIter.setHours(0, 0, 0, 0);
+      for (; dayIter <= end; dayIter.setDate(dayIter.getDate() + 1)) {
+        const day0 = new Date(dayIter);
+        if (day0 > start && day0 < end) bset.add(day0.getTime());
+        const w = winFor(day0);
+        if (w) {
+          const a = new Date(day0); a.setHours(Math.floor(w.from), Math.round((w.from % 1) * 60), 0, 0);
+          const b = new Date(day0); b.setHours(Math.floor(w.to),   Math.round((w.to   % 1) * 60), 0, 0);
+          if (a > start && a < end) bset.add(a.getTime());
+          if (b > start && b < end) bset.add(b.getTime());
+        }
+      }
+      const bounds = Array.from(bset).sort((a, b) => a - b);
+
+      const dnames = ['su', 'ma', 'ti', 'ke', 'to', 'pe', 'la'];
+      let html = '';
+
+      // Tuntiviivat ja -otsikot; keskiyöllä katkoviiva + päivälabel.
+      for (let t = new Date(origin); t <= endCeil; t.setHours(t.getHours() + 1)) {
+        const yy = yOf(t.getTime()).toFixed(1);
+        const hh = t.getHours();
+        if (hh === 0) {
+          html += '<div class="ptl-midnight" style="top:' + yy + 'px"></div>';
+          html += '<div class="ptl-hourlabel" style="top:' + yy + 'px">0.00</div>';
+          html += '<div class="ptl-midlabel" style="top:' + yy + 'px"><span>' +
+                  dnames[t.getDay()] + ' ' + t.getDate() + '.' + (t.getMonth() + 1) + '.</span></div>';
+        } else {
+          html += '<div class="ptl-hourline" style="top:' + yy + 'px"></div>';
+          html += '<div class="ptl-hourlabel" style="top:' + yy + 'px">' + hh + '.00</div>';
+        }
+      }
+
+      // Palkki segmentteineen.
+      const yS = yOf(start.getTime());
+      const yE = yOf(end.getTime());
+      let segs = '';
+      for (let i = 0; i < bounds.length - 1; i++) {
+        const a = bounds[i], b = bounds[i + 1];
+        if (b <= a) continue;
+        const paid = isPaidAt((a + b) / 2);
+        segs += '<div class="ptl-seg ' + (paid ? 'paid' : 'free') + '" style="top:' +
+                (yOf(a) - yS).toFixed(1) + 'px;height:' + (yOf(b) - yOf(a)).toFixed(1) + 'px"></div>';
+      }
+      html += '<div class="ptl-bar" style="top:' + yS.toFixed(1) + 'px;height:' +
+              Math.max(2, yE - yS).toFixed(1) + 'px">' + segs + '</div>';
+      // Vain loppuviiva (alun musta viiva poistettu — punainen nykyhetki-viiva
+      // hoitaa alun merkinnän). Kellonajat samalla fontilla/koolla kuin päivälabel.
+      const hhmm = d => d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
+      html += '<div class="ptl-edge" style="top:' + yE.toFixed(1) + 'px"></div>';
+      html += '<div class="ptl-time" style="top:' + yE.toFixed(1) + 'px">Päättyy ' + hhmm(end) + '</div>';
+
+      // Nykyhetki = pysäköinnin alku: ohut punainen viiva pisteineen. Teksti
+      // "Alkaa HH:MM" katkaisee viivan keskeltä (kuten 00:00 päivälabel).
+      const nowMs = start.getTime();
+      if (nowMs >= origin.getTime() && nowMs <= endCeil.getTime()) {
+        const yN = yOf(nowMs).toFixed(1);
+        html += '<div class="ptl-nowdot" style="top:' + yN + 'px"></div>';
+        html += '<div class="ptl-now" style="top:' + yN + 'px"></div>';
+        html += '<div class="ptl-startlabel" style="top:' + yN + 'px"><span>Alkaa ' + hhmm(start) + '</span></div>';
+      }
+
+      const savedScroll = wrap.scrollTop;
+      tl.innerHTML = html;
+      wrap.scrollTop = savedScroll;
     }
 
     let inertiaRAF=null,inertiaVel=0;
@@ -12115,11 +12672,94 @@
     drumZone.addEventListener('mousedown',e=>{stopInertia();if(isExtendingSession){extendDrumUserTouched=true;stopExtendTicker();parkingStartTime=new Date();lastDisplayedMinutes=-1;updateDisplay();}mStartY=e.clientY;mStartMins=parkingMinutes;mStartPhase=drumPhase;mLastY=e.clientY;mLastT=Date.now();mVel=0;});
     window.addEventListener('mousemove',e=>{if(mStartY===null)return;const dt=Date.now()-mLastT;if(dt>0)mVel=(e.clientY-mLastY)/dt;mLastY=e.clientY;mLastT=Date.now();const fd=e.clientY-mStartY;drumPhase=mStartPhase+fd*RADIANS_PER_PX;parkingMinutes=Math.max(0,Math.min(mStartMins+fd/PIXELS_PER_MINUTE,parkingMaxMinutes));updateDisplay();});
     window.addEventListener('mouseup',()=>{if(mStartY===null)return;mStartY=null;inertiaVel=mVel;if(Math.abs(inertiaVel)>MIN_VEL)inertiaRAF=requestAnimationFrame(runInertia);});
+
+    // ── Ajanhetki drum (filter sheet) ──────────────────────────────────
+    // Same cylinder look & drag feel as the parking-time drum, but each
+    // ~24 px of drag = one 30-minute step. Dragging down moves the clock
+    // forward; past midnight the weekday advances (ma–pe / la / su).
+    const refDrumZone = document.getElementById('ref-drum-zone');
+    const refDrumCanvas = document.getElementById('ref-drum-canvas');
+    const refDctx = refDrumCanvas ? refDrumCanvas.getContext('2d') : null;
+    function drawRefDrum(){ if (refDctx) drawDrumOn(refDctx, refDrumPhase); }
+    let refDrumTouching = false;
+    let rStartY=null, rStartMin=0, rStartPhase=0, rLastY=0, rLastT=0, rVel=0, rInertiaVel=0, rInertiaRAF=null;
+    function stopRefInertia(){ if(rInertiaRAF){ cancelAnimationFrame(rInertiaRAF); rInertiaRAF=null; } }
+    // Snap the internal value onto the 30-min grid once the gesture settles,
+    // so successive drags don't accumulate sub-step drift.
+    function refSnap(){ refMinutes = refRoundedMinutes(); }
+    function refApplyDrag(deltaPx){
+      refMinutes = Math.max(0, Math.min(rStartMin + deltaPx / REF_PX_PER_MIN, REF_MAX_MIN));
+      refDrumPhase = rStartPhase + deltaPx * RADIANS_PER_PX;
+      refTimeManual = true;
+      drawRefDrum();
+      refreshRefFilter();
+    }
+    function runRefInertia(){
+      if(Math.abs(rInertiaVel) < MIN_VEL){ rInertiaRAF=null; refSnap(); refreshRefFilter(); drawRefDrum(); return; }
+      const dpx = rInertiaVel * 16;
+      refDrumPhase += dpx * RADIANS_PER_PX;
+      refMinutes = Math.max(0, Math.min(refMinutes + dpx / REF_PX_PER_MIN, REF_MAX_MIN));
+      drawRefDrum();
+      refreshRefFilter();
+      if(refMinutes <= 0 || refMinutes >= REF_MAX_MIN){ rInertiaRAF=null; refSnap(); return; }
+      rInertiaVel *= FRICTION;
+      rInertiaRAF = requestAnimationFrame(runRefInertia);
+    }
+    if (refDrumZone) {
+      refDrumZone.addEventListener('touchstart', e=>{
+        refDrumTouching = true; stopRefInertia();
+        if(!refTimeManual) refMinutes = nowRefMinutes();  // grab from the live clock
+        rStartY = e.touches[0].clientY; rStartMin = refMinutes; rStartPhase = refDrumPhase;
+        rLastY = rStartY; rLastT = Date.now(); rVel = 0;
+      },{passive:true});
+      refDrumZone.addEventListener('touchmove', e=>{
+        if(rStartY === null) return;
+        const y = e.touches[0].clientY;
+        const now = Date.now(), dt = now - rLastT;
+        if(dt > 0) rVel = (y - rLastY) / dt;
+        rLastY = y; rLastT = now;
+        refApplyDrag(y - rStartY);
+      },{passive:true});
+      const refTouchEnd = ()=>{
+        refDrumTouching = false;
+        if(rStartY === null) return;
+        rStartY = null; rInertiaVel = rVel;
+        if(Math.abs(rInertiaVel) > MIN_VEL) rInertiaRAF = requestAnimationFrame(runRefInertia);
+        else { refSnap(); refreshRefFilter(); }
+      };
+      refDrumZone.addEventListener('touchend', refTouchEnd, {passive:true});
+      refDrumZone.addEventListener('touchcancel', refTouchEnd, {passive:true});
+      refDrumZone.addEventListener('mousedown', e=>{
+        refDrumTouching = true; stopRefInertia();
+        if(!refTimeManual) refMinutes = nowRefMinutes();  // grab from the live clock
+        rStartY = e.clientY; rStartMin = refMinutes; rStartPhase = refDrumPhase;
+        rLastY = e.clientY; rLastT = Date.now(); rVel = 0;
+        e.preventDefault();
+      });
+      window.addEventListener('mousemove', e=>{
+        if(rStartY === null || !refDrumTouching) return;
+        const dt = Date.now() - rLastT;
+        if(dt > 0) rVel = (e.clientY - rLastY) / dt;
+        rLastY = e.clientY; rLastT = Date.now();
+        refApplyDrag(e.clientY - rStartY);
+      });
+      window.addEventListener('mouseup', ()=>{
+        if(!refDrumTouching || rStartY === null) return;
+        refDrumTouching = false; rStartY = null; rInertiaVel = rVel;
+        if(Math.abs(rInertiaVel) > MIN_VEL) rInertiaRAF = requestAnimationFrame(runRefInertia);
+        else { refSnap(); refreshRefFilter(); }
+      });
+      drawRefDrum();
+    }
     drawDrum();
 
     let vehicles = loadVehicles();
     if (!vehicles.length) { vehicles = [{ plate:'FHY-857', name:'Äitin auto' }]; saveVehicles(vehicles); }
     let selectedVehicleIdx = 0;
+    // Pakottaa käyttäjän vahvistamaan ajoneuvon ennen pysäköinnin aloitusta:
+    // ensimmäinen "Aloita pysäköinti" -painallus avaa ajoneuvo-sheetin, ja vasta
+    // ajoneuvon valinnan jälkeen seuraava painallus aloittaa pysäköinnin.
+    let _vehicleConfirmedForStart = false;
 
     function renderVehicleDisplay() {
       vehicles = loadVehicles();
@@ -12145,7 +12785,7 @@
             <div class="option-name">${escapeHtml(v.name || '')}</div>
             <div class="option-reg">${escapeHtml(v.plate || '')}</div>
           </div>`;
-        row.addEventListener('click', () => { selectedVehicleIdx=i; renderVehicleDisplay(); closeVehicleSheet(); });
+        row.addEventListener('click', () => { selectedVehicleIdx=i; _vehicleConfirmedForStart=true; renderVehicleDisplay(); closeVehicleSheet(); });
         container.appendChild(row);
       });
       // Divider before "add new" entry
@@ -12255,12 +12895,17 @@
     }
 
     const overlay=document.getElementById('parking-overlay');
+    let _sheetYBeforeParking = null;
     function openParkingOverlay(p){
+      // Muista bottom sheetin asento, jotta "Valittu alue" -paluu palaa
+      // täsmälleen samaan kohtaan (ylhäällä/alhaalla) mihin jäätiin.
+      _sheetYBeforeParking = currentY;
       const areaCode=p['hel:id']||'—',kesto=p['hel:kesto']||null;
       const tyyppi=getTypeName(p['hel:paikan_asento']);
       const kestoText=kesto?`Max. ${kesto}`:'Rajoittamaton',luokka=p['hel:luokka_nimi']||'';
       isIlmainen=luokka.toLowerCase().includes('ilmainen');
       parkingMaxMinutes=kesto?kestoToMinutes(kesto):1440;
+      _vehicleConfirmedForStart = false;   // vaadi ajoneuvon vahvistus joka kerta
       // In extend mode, parkingMinutes/drumPhase are set by extendActiveParking()
       // immediately after this call. Don't zero them here or the button text
       // flickers from "Keskeytä pysäköinti" to "Vahvista uusi pysäköintiaika".
@@ -12317,12 +12962,23 @@
         stopExtendTicker();
         if (activeParkingSession) showActiveParkingBanner();
       }
-      // Open the bottom sheet to the 153px mid-level used when a P-marker is
-      // on a parking area, so the user can immediately drag it up or down.
+      // Restore the bottom sheet to exactly where it was when the parking view
+      // was opened (up or down), instead of forcing a fixed mid-level.
       setTimeout(() => {
+        const targetY = (_sheetYBeforeParking != null)
+          ? _sheetYBeforeParking
+          : (sheet.offsetHeight - 153);
         sheet.style.transition = 'transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)';
-        sheet.style.transform  = 'translateY(calc(100% - 153px))';
-        currentY = sheet.offsetHeight - 153;
+        sheet.style.transform  = `translateY(${targetY}px)`;
+        currentY = targetY;
+        // Sync the map-dimming backdrop to the restored sheet position (same
+        // formula as the drag handler) so the map brightness matches.
+        if (typeof sheetBackdrop !== 'undefined' && sheetBackdrop) {
+          const op = 1 - (currentY / (sheet.clientHeight - 60));
+          sheetBackdrop.style.opacity = Math.max(0, Math.min(1, (op - 0.5) * 2));
+        }
+        if (typeof updateNavBtnVisibility === 'function') updateNavBtnVisibility();
+        if (typeof updateOsmOpacity === 'function') updateOsmOpacity(currentY);
       }, 50);
     }
 
@@ -12362,6 +13018,11 @@
       // Disc / free area → open the parking-disc view instead of the
       // duration-based parking flow.
       if (isDiscOrFreeArea(p)) { openDiscOverlay(); return; }
+      _parkingAreaValid = {
+        mapeFrom: _nfv(p.valid),         mapeTo: _nfv(p.valid_mape_to),
+        laFrom:   _nfv(p.valid_la_from), laTo:   _nfv(p.valid_la_to),
+        suFrom:   _nfv(p.valid_su_from), suTo:   _nfv(p.valid_su_to)
+      };
       openParkingOverlay({
         'hel:id':            computeAreaCodeFromFeature(f[0]),
         'hel:kesto':         p.max_hours ? `${p.max_hours}h` : null,
@@ -12591,6 +13252,7 @@
         areaCode:      areaCode,
         paymentMethod: pm.name,
         maxHours:      parkingMaxMinutes / 60,
+        validTimes:    _parkingAreaValid,
         location:      { lat: center.lat, lng: center.lng }
       };
 
@@ -13458,10 +14120,10 @@
 
     function showDestinationPin(lat, lng) {
       removeDestinationPin();
-      // Two-level structure: MapLibre positions the outer element on the
+      // Two-level structure: Mapbox GL positions the outer element on the
       // map (it writes to outer's `transform`), and our drop animation
       // transforms the inner element. Without this split the keyframes'
-      // `translateY(-260px)` overrides MapLibre's positioning and the pin
+      // `translateY(-260px)` overrides Mapbox GL's positioning and the pin
       // ends up off-screen instead of where the parking area is.
       const outer = document.createElement('div');
       outer.style.cssText = 'pointer-events:none;width:22px;height:32px;';
@@ -13577,7 +14239,7 @@
       // 5) Drop the red destination pin once the camera arrives. We use
       //    a fixed setTimeout (matching the flyTo duration + a small
       //    buffer) instead of `map.once('moveend', ...)` because moveend
-      //    can fail to fire if MapLibre considers the move to be a no-op
+      //    can fail to fire if Mapbox GL considers the move to be a no-op
       //    (e.g. when the camera is already at the requested location).
       setTimeout(() => {
         try {
@@ -13962,6 +14624,7 @@
       if (!activeParkingSession) return;
       isExtendingSession    = true;
       extendDrumUserTouched = false;
+      _parkingAreaValid     = activeParkingSession.validTimes || null;
       hideActiveParkingBanner();
       // Add the extending-mode class first so the dim is in place from the
       // moment the overlay slides open (avoids any visual flash).
@@ -13997,11 +14660,15 @@
       }
       // Normal (non-extending) flow
       if (parkingMinutes === 0) { jiggleDrum(); return; }
+      // Vaadi ajoneuvon vahvistus ennen aloitusta: 1. painallus avaa "Valitse
+      // ajoneuvo" -sheetin. Ajoneuvon valinnan jälkeen (sheet sulkeutuu) seuraava
+      // painallus aloittaa pysäköinnin normaalisti.
+      if (!_vehicleConfirmedForStart) { openVehicleSheet(); return; }
       startNewParkingSession();
     });
 
 
-    map.on('error',e=>{console.warn('MapLibre virhe:',e.error?.message||e);});
+    map.on('error',e=>{console.warn('Mapbox GL virhe:',e.error?.message||e);});
 
     let startY=0,startTranslate=0,lastY=0,lastTime=0,velocity=0,isDragging=false;
     function snapTo(t){
@@ -14086,7 +14753,7 @@
       // when the thumb itself is grabbed — touching the track passes through
       // (e.target becomes the track/container) and is allowed to scroll. This
       // covers BOTH the max-time and the charging-power sliders.
-      if(filterMode && (sliderTouching || (e.target && e.target.classList && e.target.classList.contains('range-input')))){
+      if(filterMode && (sliderTouching || refDrumTouching || (e.target && e.target.closest && e.target.closest('#ref-drum-zone')) || (e.target && e.target.classList && e.target.classList.contains('range-input')))){
         return;
       }
       // Track the gesture so we can tell a tap (activate a control) from a
