@@ -3039,13 +3039,9 @@
     #ajanhetki-pill .ajanhetki-pill-label { color: #0C0243; }
     #ajanhetki-pill #ajanhetki-pill-time { color: #1266f1; }
 
-    #ajanhetki-float-backdrop {
-      position: fixed; inset: 0; z-index: 59;
-      background: rgba(0,0,0,.08);
-      opacity: 0; pointer-events: none;
-      transition: opacity .3s ease;
-    }
-    #ajanhetki-float-backdrop.visible { opacity: 1; pointer-events: auto; }
+    /* Backdrop intentionally disabled: the map stays fully interactive behind
+       the open window, and panning the map collapses it back to the pill. */
+    #ajanhetki-float-backdrop { display: none; }
 
     #ajanhetki-float {
       position: fixed;
@@ -3456,7 +3452,7 @@
         <canvas id="ref-drum-canvas-2" width="52" height="80"></canvas>
       </div>
     </div>
-    <div class="ajanhetki-float-hint">Vieritä rullaa säätääksesi ajanhetkeä, jota kartan maksullisuus käyttää.</div>
+    <div class="ajanhetki-float-hint">Vieritä rullaa säätääksesi ajanhetkeä, jolloin pysäköintialueet ovat ilmaisia tai maksullisia.</div>
   </div>
 
   <!-- Dim layer that covers the strip of map visible to the right of the
@@ -10644,6 +10640,10 @@
     let refDrumPhase = 0;
     let refTickerId = null;
     let _refLastApplied = -1;
+    // Pill lifecycle: hidden until "summoned" (a manual time is set and the
+    // filter sheet closed). Once shown it survives map moves and reset-to-live
+    // ("Nykyhetki"), and is only removed by the × button in the open window.
+    let ajanhetkiDismissed = true;
 
     // Live mode ("nykyhetki") follows the real clock minute by minute — no
     // rounding. Only manual drum values snap onto the 30-minute grid.
@@ -12112,6 +12112,7 @@
         pillBall.style.transform = 'translateY(0px)';
         PILL_BTNS.forEach(b => b.classList.remove('ball-here'));
       }
+      if (refTimeManual) ajanhetkiDismissed = false;
       updateAjanhetkiPillVisibility();
       checkParking();
     }
@@ -12883,6 +12884,8 @@
       const hhmm = d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
       const pillT = document.getElementById('ajanhetki-pill-time');
       if (pillT) pillT.textContent = hhmm;
+      const pillL = document.querySelector('#ajanhetki-pill .ajanhetki-pill-label');
+      if (pillL) pillL.textContent = refTimeManual ? 'Ajanhetki' : 'Nykyhetki';
       const v2 = document.getElementById('ref-time-value-2');
       if (v2) { v2.textContent = hhmm; v2.classList.toggle('manual', refTimeManual); }
       const r2 = document.getElementById('ref-time-reset-2');
@@ -12902,22 +12905,21 @@
       }
       updateAjanhetkiPillVisibility();
     }
-    // Pill shows only with a manual reference time set, the filter sheet closed,
-    // and the floating window not already open.
+    // Pill shows while it is summoned (not dismissed), free-parking colouring is
+    // on, the filter sheet is closed, and the window isn't already open.
     function updateAjanhetkiPillVisibility(){
       const pill = document.getElementById('ajanhetki-pill');
       if (!pill) return;
       const fl = document.getElementById('ajanhetki-float');
       const floatOpen = !!(fl && fl.classList.contains('open'));
-      pill.classList.toggle('visible', refTimeManual && !filterMode && !floatOpen);
+      const show = !ajanhetkiDismissed && showFreeParking && !filterMode && !floatOpen;
+      pill.classList.toggle('visible', show);
     }
     function openAjanhetkiFloat(){
       const fl = document.getElementById('ajanhetki-float');
       if (!fl) return;
       const pill = document.getElementById('ajanhetki-pill');
-      const bd = document.getElementById('ajanhetki-float-backdrop');
-      if (pill) pill.classList.remove('visible');   // pill morphs into the window
-      if (bd) bd.classList.add('visible');
+      if (pill) pill.classList.remove('visible');   // pill grows into the window
       fl.classList.add('open');
       updateRefTimeUI();   // refresh mirror value / day / reset
       drawRefDrum();       // paint the floating drum
@@ -12925,20 +12927,32 @@
     function closeAjanhetkiFloat(){
       const fl = document.getElementById('ajanhetki-float');
       if (!fl) return;
-      const bd = document.getElementById('ajanhetki-float-backdrop');
       fl.classList.remove('open');
-      if (bd) bd.classList.remove('visible');
-      updateAjanhetkiPillVisibility();   // pill returns if still manual
+      updateAjanhetkiPillVisibility();   // pill returns unless dismissed
     }
     (function wireAjanhetkiControls(){
       const pill = document.getElementById('ajanhetki-pill');
       if (pill) pill.addEventListener('click', openAjanhetkiFloat);
-      const bd = document.getElementById('ajanhetki-float-backdrop');
-      if (bd) bd.addEventListener('click', closeAjanhetkiFloat);
+      // × fully dismisses the pill and returns the map to live ("nykyhetki")
+      // colouring, so the map is never left tinted for a hidden manual time.
       const cl = document.getElementById('ajanhetki-float-close');
-      if (cl) cl.addEventListener('click', closeAjanhetkiFloat);
+      if (cl) cl.addEventListener('click', () => {
+        ajanhetkiDismissed = true;
+        resetRefTime();
+        closeAjanhetkiFloat();
+      });
+      // "Palauta nykyhetkeen" returns to live time but KEEPS the pill, which
+      // then reads "Nykyhetki HH:MM".
       const rs = document.getElementById('ref-time-reset-2');
       if (rs) rs.addEventListener('click', () => { resetRefTime(); closeAjanhetkiFloat(); });
+      // Panning / zooming the map collapses the open window back to the pill;
+      // the chosen time stays in effect.
+      if (typeof map !== 'undefined' && map && map.on) {
+        map.on('movestart', () => {
+          const fl = document.getElementById('ajanhetki-float');
+          if (fl && fl.classList.contains('open')) closeAjanhetkiFloat();
+        });
+      }
     })();
 
     // Floating-window drum: additive binding reusing the shared drag state and
