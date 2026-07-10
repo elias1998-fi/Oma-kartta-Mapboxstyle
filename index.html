@@ -1848,6 +1848,12 @@
       text-align: center;
       line-height: 1.4;
     }
+    /* "Maksulliset / Kaikki / Ilmaiset" -segmentti on piilotettu näkyvistä.
+       Markup (#free-mode-segmented > .seg-track ja #free-mode-info) on jätetty
+       ennalleen ja toimii yhä koodissa — palauta se näkyviin poistamalla nämä
+       kaksi display:none-sääntöä. */
+    #free-mode-segmented > .seg-track { display: none; }
+    #free-mode-segmented > #free-mode-info { display: none; }
     /* Ajanhetki (reference-time) row: clock on the left, drum on the right */
     #ref-time-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
     #ref-time-left { flex: 1; }
@@ -1857,6 +1863,15 @@
     #ref-time-day { font-size: 12px; color: #888; margin-top: 4px; font-family: Arial, sans-serif; }
     #ref-time-reset { display: none; margin-top: 6px; border: none; background: none; padding: 0; font-size: 12px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
     #ref-time-reset.visible { display: inline-block; }
+
+    /* Colour legend under the Ajanhetki drum */
+    #ref-legend { margin-top: 16px; }
+    .ref-legend-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; font-family: Arial, sans-serif; }
+    .ref-legend-row + .ref-legend-row { margin-top: 9px; }
+    .ref-legend-row .ah-bullet { margin-top: 0; }
+    .ref-legend-box { flex-shrink: 0; width: 15px; height: 15px; border-radius: 3px; }
+    .ref-legend-box.paid { background: #1266f1; }
+    .ref-legend-box.free { background: #7F1F89; }
 
     #slider-label { font-size: 15px; color: #222; margin-bottom: 10px; text-align: center; }
     #slider-value { font-weight: bold; color: #0C0243; font-size: 17px; }
@@ -3054,27 +3069,60 @@
       padding: 15px 18px 17px;
       font-family: Arial, sans-serif;
       transform-origin: top center;
-      transform: translateX(-50%) scale(.06);
+      transform: translateX(-50%);
       opacity: 0; pointer-events: none;
-      will-change: transform, opacity;
+      will-change: transform, opacity, clip-path;
     }
-    /* Pullonhenki: width and height grow together as the window puffs up out of
-       the pill (gentle overshoot), and collapse together back down into it. */
-    #ajanhetki-float.open {
-      opacity: 1; pointer-events: auto;
-      animation: ajanhetki-genie-in .4s cubic-bezier(.34,1.56,.44,1) both;
+    /* Resting visible state — no clip, so the rounded corners and shadow show. */
+    #ajanhetki-float.open { opacity: 1; pointer-events: auto; }
+    /* Pullonhenki: the window streams out through a narrow neck at the pill
+       (the bottle mouth) — the neck opens and the body flares out and down,
+       so it never reads as a plain rectangle scaling. */
+    #ajanhetki-float.opening {
+      animation: ajanhetki-genie-in .46s cubic-bezier(.22,1,.36,1) both;
     }
     #ajanhetki-float.closing {
-      opacity: 1; pointer-events: none;
-      animation: ajanhetki-genie-out .26s cubic-bezier(.5,0,.85,.15) both;
+      animation: ajanhetki-genie-out .34s cubic-bezier(.55,0,.68,.19) both;
+      pointer-events: none;
     }
     @keyframes ajanhetki-genie-in {
-      0%   { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(.06); }
-      100% { opacity: 1; transform: translateX(-50%) translateY(0)    scale(1); }
+      0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-4px) scale(.12);
+        clip-path: polygon(47% 0%, 53% 0%, 61% 100%, 39% 100%);
+      }
+      40% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(.8);
+        clip-path: polygon(26% 0%, 74% 0%, 84% 100%, 16% 100%);
+      }
+      72% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1.03);
+        clip-path: polygon(5% 0%, 95% 0%, 99% 100%, 1% 100%);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+        clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+      }
     }
     @keyframes ajanhetki-genie-out {
-      0%   { opacity: 1; transform: translateX(-50%) translateY(0)    scale(1); }
-      100% { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(.06); }
+      0% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+        clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+      }
+      55% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(.78);
+        clip-path: polygon(28% 0%, 72% 0%, 82% 100%, 18% 100%);
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-4px) scale(.12);
+        clip-path: polygon(47% 0%, 53% 0%, 61% 100%, 39% 100%);
+      }
     }
     .ajanhetki-float-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .ajanhetki-float-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: .5px; }
@@ -4876,6 +4924,12 @@
             <div class="drum-scroll-zone" id="ref-drum-zone">
               <canvas id="ref-drum-canvas" width="52" height="80"></canvas>
             </div>
+          </div>
+
+          <!-- Colour legend for the Ajanhetki view -->
+          <div id="ref-legend">
+            <div class="ref-legend-row"><span class="ah-bullet"></span><span class="ref-legend-text">Maksulliset alueet kyseisenä ajanhetkenä</span><span class="ref-legend-box paid"></span></div>
+            <div class="ref-legend-row"><span class="ah-bullet"></span><span class="ref-legend-text">Ilmaiset alueet kyseisenä ajanhetkenä</span><span class="ref-legend-box free"></span></div>
           </div>
         </div>
       </div>
@@ -12943,14 +12997,16 @@
       if (pill) pill.classList.remove('visible');   // pill streams up into the window
       fl.classList.remove('closing');
       fl.classList.add('open');
+      fl.classList.add('opening');   // plays genie-in; removed on animationend
       updateRefTimeUI();   // refresh mirror value / day / reset
       drawRefDrum();       // paint the floating drum
     }
     function closeAjanhetkiFloat(){
       const fl = document.getElementById('ajanhetki-float');
       if (!fl) return;
-      if (fl.classList.contains('open')) {
+      if (fl.classList.contains('open') || fl.classList.contains('opening')) {
         fl.classList.remove('open');
+        fl.classList.remove('opening');
         fl.classList.add('closing');   // genie-retract, then hide on animationend
       }
       updateAjanhetkiPillVisibility();   // pill returns unless dismissed
@@ -12962,6 +13018,7 @@
       // rests fully hidden.
       const fl0 = document.getElementById('ajanhetki-float');
       if (fl0) fl0.addEventListener('animationend', (e) => {
+        if (e.animationName === 'ajanhetki-genie-in')  fl0.classList.remove('opening');
         if (e.animationName === 'ajanhetki-genie-out') fl0.classList.remove('closing');
       });
       // × fully dismisses the pill and returns the map to live ("nykyhetki")
