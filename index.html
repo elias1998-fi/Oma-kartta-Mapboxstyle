@@ -1588,18 +1588,18 @@
     .hours-time { font-weight: 500; }
     .price-label { font-size: 13px; color: #888; margin-top: 18px; margin-bottom: 4px; }
     .price-value { font-size: 14px; color: #333; }
-    #sheet-filter { display: none; flex-direction: column; padding: 0 18px 16px 24px; flex: 1; font-family: Arial, sans-serif; max-height: calc(80vh - 18px); overflow-y: scroll; overflow-x: hidden; touch-action: none; position: relative; scrollbar-width: none; }
+    #sheet-filter { display: none; flex-direction: column; padding: 0 24px 16px 16px; flex: 1; font-family: Arial, sans-serif; max-height: calc(80vh - 18px); overflow-y: scroll; overflow-x: hidden; touch-action: none; position: relative; scrollbar-width: none; }
     #sheet-filter::-webkit-scrollbar { width: 0; height: 0; display: none; }
-    #filter-scrollbar { position: absolute; right: 4px; width: 11px; z-index: 6; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    #filter-scrollbar { position: absolute; right: 4px; width: 14px; z-index: 6; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     #filter-scrollbar.visible { opacity: 1; }
-    #filter-scrollbar-thumb { position: absolute; left: 0; width: 100%; min-height: 34px; background: rgba(60,60,67,0.4); border-radius: 5.5px; pointer-events: auto; cursor: grab; }
+    #filter-scrollbar-thumb { position: absolute; left: 0; width: 100%; min-height: 34px; background: rgba(60,60,67,0.4); border-radius: 7px; pointer-events: auto; cursor: grab; }
     #filter-scrollbar-thumb:active { background: rgba(60,60,67,0.6); cursor: grabbing; }
     #filter-scroll-inner { flex: 0 0 auto; will-change: transform; }
     #sheet-filter.visible { display: flex; }
     #sheet-filter::-webkit-scrollbar { width: 6px; }
     #sheet-filter::-webkit-scrollbar-thumb { background: #c4c4cc; border-radius: 3px; }
     #sheet-filter::-webkit-scrollbar-track { background: transparent; }
-    #filter-title { position: sticky; top: 0; z-index: 3; background: white; font-size: 16px; font-weight: bold; color: #222; margin: 0 -18px 10px -24px; padding: 12px 24px 12px 24px; border-bottom: 1px solid #eee; }
+    #filter-title { position: sticky; top: 0; z-index: 3; background: white; font-size: 16px; font-weight: bold; color: #222; margin: 0 -24px 10px -16px; padding: 12px 24px 12px 16px; border-bottom: 1px solid #eee; }
     
     .filter-group {
       background: #f5f5f5;
@@ -12046,6 +12046,13 @@
       sf.addEventListener('scroll', update, { passive: true });
       window.addEventListener('resize', () => setTimeout(update, 50));
       window._updateFilterScrollbar = update;
+      // Resize the thumb the instant the content height changes — e.g. a box
+      // like "Näytä julkiset sähkölatauspisteet" opening or closing — instead of
+      // only when the scrollbar is touched.
+      if (window.ResizeObserver && inner) {
+        const ro = new ResizeObserver(() => update());
+        ro.observe(inner);
+      }
       // While the filter sheet is visible, follow its on-screen position each
       // frame (covers the open animation, dragging and snapping) so the track
       // length tracks the visible sheet height. Auto-stops when the sheet hides.
