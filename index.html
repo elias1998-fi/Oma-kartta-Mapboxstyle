@@ -3053,15 +3053,33 @@
       box-shadow: 0 12px 40px rgba(0,0,0,.22);
       padding: 15px 18px 17px;
       font-family: Arial, sans-serif;
-      transform: translateX(-50%) translateY(-6px) scale(.9);
       transform-origin: top center;
+      transform: translateX(-50%) scaleX(.16) scaleY(.03);
       opacity: 0; pointer-events: none;
-      transition: opacity .3s cubic-bezier(.25,.46,.45,.94),
-                  transform .3s cubic-bezier(.25,.46,.45,.94);
+      will-change: transform, opacity;
     }
+    /* Pullonhenki: the window streams up out of the pill — a thin sliver that
+       stretches tall and narrow, then unfurls to full width and settles. */
     #ajanhetki-float.open {
       opacity: 1; pointer-events: auto;
-      transform: translateX(-50%) translateY(0) scale(1);
+      animation: ajanhetki-genie-in .46s cubic-bezier(.16,1,.3,1) both;
+    }
+    /* ...and is sucked back down into the pill on close. */
+    #ajanhetki-float.closing {
+      opacity: 1; pointer-events: none;
+      animation: ajanhetki-genie-out .32s cubic-bezier(.5,0,.75,.15) both;
+    }
+    @keyframes ajanhetki-genie-in {
+      0%   { opacity: 0; transform: translateX(-50%) translateY(-12px) scaleX(.16) scaleY(.03); }
+      35%  { opacity: 1; transform: translateX(-50%) translateY(-2px)  scaleX(.36) scaleY(1.08); }
+      65%  { opacity: 1; transform: translateX(-50%) translateY(0)     scaleX(1.04) scaleY(.98); }
+      82%  {             transform: translateX(-50%)                    scaleX(.99)  scaleY(1.01); }
+      100% { opacity: 1; transform: translateX(-50%)                    scaleX(1)    scaleY(1); }
+    }
+    @keyframes ajanhetki-genie-out {
+      0%   { opacity: 1; transform: translateX(-50%)                    scaleX(1)    scaleY(1); }
+      45%  { opacity: 1; transform: translateX(-50%) translateY(-2px)  scaleX(.36) scaleY(1.08); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-12px) scaleX(.16) scaleY(.03); }
     }
     .ajanhetki-float-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .ajanhetki-float-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: .5px; }
@@ -3076,6 +3094,8 @@
     #ref-time-reset-2 { display: none; margin-top: 9px; border: none; background: none; padding: 0; font-size: 13px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
     #ref-time-reset-2.visible { display: inline-block; }
     .ajanhetki-float-hint { margin-top: 14px; font-size: 12px; color: #9a9a9a; line-height: 1.45; font-family: Arial, sans-serif; }
+    .ajanhetki-float-hint .ah-free { text-decoration: underline; text-decoration-color: #7F1F89; text-decoration-thickness: 2px; text-underline-offset: 2px; }
+    .ajanhetki-float-hint .ah-paid { text-decoration: underline; text-decoration-color: #1266f1; text-decoration-thickness: 2px; text-underline-offset: 2px; }
     #ref-drum-canvas-2 { display: block; width: 52px; height: 80px; }
 
     .vehicle-display {
@@ -3452,7 +3472,7 @@
         <canvas id="ref-drum-canvas-2" width="52" height="80"></canvas>
       </div>
     </div>
-    <div class="ajanhetki-float-hint">Vieritä rullaa säätääksesi ajanhetkeä, jolloin pysäköintialueet ovat ilmaisia tai maksullisia.</div>
+    <div class="ajanhetki-float-hint">Vieritä rullaa säätääksesi ajanhetkeä, jolloin pysäköintialueet ovat <span class="ah-free">ilmaisia</span> tai <span class="ah-paid">maksullisia</span>. Huom! Tarkista aina ajantasainen tieto liikennemerkistä ennen pysäköintiä.</div>
   </div>
 
   <!-- Dim layer that covers the strip of map visible to the right of the
@@ -12919,7 +12939,8 @@
       const fl = document.getElementById('ajanhetki-float');
       if (!fl) return;
       const pill = document.getElementById('ajanhetki-pill');
-      if (pill) pill.classList.remove('visible');   // pill grows into the window
+      if (pill) pill.classList.remove('visible');   // pill streams up into the window
+      fl.classList.remove('closing');
       fl.classList.add('open');
       updateRefTimeUI();   // refresh mirror value / day / reset
       drawRefDrum();       // paint the floating drum
@@ -12927,12 +12948,21 @@
     function closeAjanhetkiFloat(){
       const fl = document.getElementById('ajanhetki-float');
       if (!fl) return;
-      fl.classList.remove('open');
+      if (fl.classList.contains('open')) {
+        fl.classList.remove('open');
+        fl.classList.add('closing');   // genie-retract, then hide on animationend
+      }
       updateAjanhetkiPillVisibility();   // pill returns unless dismissed
     }
     (function wireAjanhetkiControls(){
       const pill = document.getElementById('ajanhetki-pill');
       if (pill) pill.addEventListener('click', openAjanhetkiFloat);
+      // Once the genie-retract finishes, drop the closing class so the window
+      // rests fully hidden.
+      const fl0 = document.getElementById('ajanhetki-float');
+      if (fl0) fl0.addEventListener('animationend', (e) => {
+        if (e.animationName === 'ajanhetki-genie-out') fl0.classList.remove('closing');
+      });
       // × fully dismisses the pill and returns the map to live ("nykyhetki")
       // colouring, so the map is never left tinted for a hidden manual time.
       const cl = document.getElementById('ajanhetki-float-close');
