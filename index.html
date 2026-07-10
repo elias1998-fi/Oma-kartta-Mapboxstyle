@@ -3014,6 +3014,74 @@
     .drum-scroll-zone:active { cursor: grabbing; }
     #drum-canvas { display: block; width: 52px; height: 80px; }
 
+    /* ── Ajanhetki pill + floating window ─────────────────────────────── */
+    #ajanhetki-pill {
+      position: fixed;
+      top: calc(max(16px, env(safe-area-inset-top)) + 3px);
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px) scale(.96);
+      z-index: 24;
+      display: flex; align-items: center; gap: 6px;
+      height: 42px; padding: 0 15px;
+      background: #fff; border: none; border-radius: 999px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+      font-family: Arial, sans-serif; font-size: 14px; font-weight: 700;
+      white-space: nowrap; cursor: pointer;
+      opacity: 0; pointer-events: none;
+      transition: opacity .28s cubic-bezier(.25,.46,.45,.94),
+                  transform .28s cubic-bezier(.25,.46,.45,.94);
+    }
+    #ajanhetki-pill.visible {
+      opacity: 1; pointer-events: auto;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+    #ajanhetki-pill svg { width: 15px; height: 15px; flex-shrink: 0; }
+    #ajanhetki-pill .ajanhetki-pill-label { color: #0C0243; }
+    #ajanhetki-pill #ajanhetki-pill-time { color: #1266f1; }
+
+    #ajanhetki-float-backdrop {
+      position: fixed; inset: 0; z-index: 59;
+      background: rgba(0,0,0,.08);
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s ease;
+    }
+    #ajanhetki-float-backdrop.visible { opacity: 1; pointer-events: auto; }
+
+    #ajanhetki-float {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      left: 50%;
+      width: min(340px, calc(100vw - 24px));
+      z-index: 60;
+      background: #fff; border-radius: 22px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.22);
+      padding: 15px 18px 17px;
+      font-family: Arial, sans-serif;
+      transform: translateX(-50%) translateY(-6px) scale(.9);
+      transform-origin: top center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s cubic-bezier(.25,.46,.45,.94),
+                  transform .3s cubic-bezier(.25,.46,.45,.94);
+    }
+    #ajanhetki-float.open {
+      opacity: 1; pointer-events: auto;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+    .ajanhetki-float-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .ajanhetki-float-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: .5px; }
+    #ajanhetki-float-close { width: 30px; height: 30px; margin: -6px -8px -4px 0; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    #ajanhetki-float-close:active { background: #eee; }
+    #ajanhetki-float-close svg { width: 17px; height: 17px; }
+    .ajanhetki-float-body { display: flex; align-items: center; gap: 14px; }
+    .ajanhetki-float-left { flex: 1; }
+    #ref-time-value-2 { font-size: 34px; font-weight: bold; color: #0C0243; line-height: 1; font-family: Arial, sans-serif; transition: color .2s ease; }
+    #ref-time-value-2.manual { color: #1266f1; }
+    #ref-time-day-2 { font-size: 13px; color: #888; margin-top: 5px; font-family: Arial, sans-serif; }
+    #ref-time-reset-2 { display: none; margin-top: 9px; border: none; background: none; padding: 0; font-size: 13px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
+    #ref-time-reset-2.visible { display: inline-block; }
+    .ajanhetki-float-hint { margin-top: 14px; font-size: 12px; color: #9a9a9a; line-height: 1.45; font-family: Arial, sans-serif; }
+    #ref-drum-canvas-2 { display: block; width: 52px; height: 80px; }
+
     .vehicle-display {
       display: flex; align-items: center; gap: 10px;
       padding: 8px 10px;
@@ -3354,6 +3422,42 @@
       <path d="M12 2 L22 22 L12 18 L2 22 Z" fill="#0C0243" transform="rotate(45 12 12)"/>
     </svg>
   </button>
+
+  <!-- Ajanhetki pill: appears top-centre (between the burger menu and the
+       locate button) when a manual reference time is set and the filter sheet
+       is closed. Tapping it grows into the floating window below. -->
+  <button id="ajanhetki-pill" aria-label="Muokkaa ajanhetkeä">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#1266f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9"/><path d="M12 7 V12 L15.5 14"/>
+    </svg>
+    <span class="ajanhetki-pill-label">Ajanhetki</span>
+    <span id="ajanhetki-pill-time">–</span>
+  </button>
+
+  <!-- Floating "Ajanhetki" window — the pill expands into this. Its drum shares
+       all reference-time state with the filter-sheet drum. -->
+  <div id="ajanhetki-float-backdrop"></div>
+  <div id="ajanhetki-float" role="dialog" aria-label="Ajanhetki">
+    <div class="ajanhetki-float-head">
+      <span class="ajanhetki-float-title">Ajanhetki</span>
+      <button id="ajanhetki-float-close" aria-label="Sulje">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+          <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="ajanhetki-float-body">
+      <div class="ajanhetki-float-left">
+        <div id="ref-time-value-2">–</div>
+        <div id="ref-time-day-2">nykyhetki</div>
+        <button id="ref-time-reset-2">Palauta nykyhetkeen</button>
+      </div>
+      <div class="drum-scroll-zone" id="ref-drum-zone-2">
+        <canvas id="ref-drum-canvas-2" width="52" height="80"></canvas>
+      </div>
+    </div>
+    <div class="ajanhetki-float-hint">Vieritä rullaa säätääksesi ajanhetkeä, jota kartan maksullisuus käyttää.</div>
+  </div>
 
   <!-- Dim layer that covers the strip of map visible to the right of the
        profile panel while it is open. Tapping the dim closes the profile. -->
@@ -10580,6 +10684,7 @@
           }
         }
       }
+      syncAjanhetkiMirror();
     }
     // Re-applies the map filter, but only when the effective time (exact
     // minute in live mode, snapped 30-min step in manual mode) has actually
@@ -11969,6 +12074,7 @@
       currentY=window.innerHeight*0.6;
       btnContainer.classList.add('hidden');
       updateResetBtnVisibility();
+      updateAjanhetkiPillVisibility();
     }
     // Size the filter scroll area so, when the sheet is at its top position
     // (80% of the viewport), the content fills exactly down to the screen
@@ -12006,6 +12112,7 @@
         pillBall.style.transform = 'translateY(0px)';
         PILL_BTNS.forEach(b => b.classList.remove('ball-here'));
       }
+      updateAjanhetkiPillVisibility();
       checkParking();
     }
     // filterBtn click handled in menuItemClick above
@@ -12680,7 +12787,16 @@
     const refDrumZone = document.getElementById('ref-drum-zone');
     const refDrumCanvas = document.getElementById('ref-drum-canvas');
     const refDctx = refDrumCanvas ? refDrumCanvas.getContext('2d') : null;
-    function drawRefDrum(){ if (refDctx) drawDrumOn(refDctx, refDrumPhase); }
+    // Second drum instance living inside the floating "Ajanhetki" window. It
+    // shares every reference-time variable (refMinutes / refDrumPhase /
+    // refTimeManual) with the filter-sheet drum, so rolling either one keeps
+    // both drums — and the pill label — perfectly in sync.
+    const refDrumCanvas2 = document.getElementById('ref-drum-canvas-2');
+    const refDctx2 = refDrumCanvas2 ? refDrumCanvas2.getContext('2d') : null;
+    function drawRefDrum(){
+      if (refDctx)  drawDrumOn(refDctx,  refDrumPhase);
+      if (refDctx2) drawDrumOn(refDctx2, refDrumPhase);
+    }
     let refDrumTouching = false;
     let rStartY=null, rStartMin=0, rStartPhase=0, rLastY=0, rLastT=0, rVel=0, rInertiaVel=0, rInertiaRAF=null;
     function stopRefInertia(){ if(rInertiaRAF){ cancelAnimationFrame(rInertiaRAF); rInertiaRAF=null; } }
@@ -12751,6 +12867,117 @@
       });
       drawRefDrum();
     }
+
+    // ── Ajanhetki pill + floating window ────────────────────────────────
+    // The pill appears top-centre (between the burger menu and the locate
+    // button) once the user has rolled the Ajanhetki drum away from "now" and
+    // closed the filter sheet. Tapping it grows into a floating window whose
+    // drum edits the very same reference time — all state is shared, so the
+    // two drums and the pill label never disagree.
+    const refDrumZone2 = document.getElementById('ref-drum-zone-2');
+
+    // Mirrors the shared reference time onto the pill label and the floating
+    // window's value / day / reset. Called from updateRefTimeUI on every change.
+    function syncAjanhetkiMirror(){
+      const d = getRefDate();
+      const hhmm = d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
+      const pillT = document.getElementById('ajanhetki-pill-time');
+      if (pillT) pillT.textContent = hhmm;
+      const v2 = document.getElementById('ref-time-value-2');
+      if (v2) { v2.textContent = hhmm; v2.classList.toggle('manual', refTimeManual); }
+      const r2 = document.getElementById('ref-time-reset-2');
+      if (r2) r2.classList.toggle('visible', refTimeManual);
+      const day2 = document.getElementById('ref-time-day-2');
+      if (day2) {
+        if (!refTimeManual) { day2.textContent = 'nykyhetki'; }
+        else {
+          const diffDays = Math.floor(refEffectiveMinutes() / 1440);
+          if      (diffDays === 0) day2.textContent = 'tänään';
+          else if (diffDays === 1) day2.textContent = 'huomenna';
+          else {
+            const dn = ['su', 'ma', 'ti', 'ke', 'to', 'pe', 'la'];
+            day2.textContent = dn[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.';
+          }
+        }
+      }
+      updateAjanhetkiPillVisibility();
+    }
+    // Pill shows only with a manual reference time set, the filter sheet closed,
+    // and the floating window not already open.
+    function updateAjanhetkiPillVisibility(){
+      const pill = document.getElementById('ajanhetki-pill');
+      if (!pill) return;
+      const fl = document.getElementById('ajanhetki-float');
+      const floatOpen = !!(fl && fl.classList.contains('open'));
+      pill.classList.toggle('visible', refTimeManual && !filterMode && !floatOpen);
+    }
+    function openAjanhetkiFloat(){
+      const fl = document.getElementById('ajanhetki-float');
+      if (!fl) return;
+      const pill = document.getElementById('ajanhetki-pill');
+      const bd = document.getElementById('ajanhetki-float-backdrop');
+      if (pill) pill.classList.remove('visible');   // pill morphs into the window
+      if (bd) bd.classList.add('visible');
+      fl.classList.add('open');
+      updateRefTimeUI();   // refresh mirror value / day / reset
+      drawRefDrum();       // paint the floating drum
+    }
+    function closeAjanhetkiFloat(){
+      const fl = document.getElementById('ajanhetki-float');
+      if (!fl) return;
+      const bd = document.getElementById('ajanhetki-float-backdrop');
+      fl.classList.remove('open');
+      if (bd) bd.classList.remove('visible');
+      updateAjanhetkiPillVisibility();   // pill returns if still manual
+    }
+    (function wireAjanhetkiControls(){
+      const pill = document.getElementById('ajanhetki-pill');
+      if (pill) pill.addEventListener('click', openAjanhetkiFloat);
+      const bd = document.getElementById('ajanhetki-float-backdrop');
+      if (bd) bd.addEventListener('click', closeAjanhetkiFloat);
+      const cl = document.getElementById('ajanhetki-float-close');
+      if (cl) cl.addEventListener('click', closeAjanhetkiFloat);
+      const rs = document.getElementById('ref-time-reset-2');
+      if (rs) rs.addEventListener('click', () => { resetRefTime(); closeAjanhetkiFloat(); });
+    })();
+
+    // Floating-window drum: additive binding reusing the shared drag state and
+    // helpers. The window-level mousemove/mouseup handlers bound above already
+    // continue a mouse drag for whichever zone set refDrumTouching + rStartY,
+    // so only touch + mousedown need binding here.
+    if (refDrumZone2) {
+      refDrumZone2.addEventListener('touchstart', e=>{
+        refDrumTouching = true; stopRefInertia();
+        if(!refTimeManual) refMinutes = nowRefMinutes();
+        rStartY = e.touches[0].clientY; rStartMin = refMinutes; rStartPhase = refDrumPhase;
+        rLastY = rStartY; rLastT = Date.now(); rVel = 0;
+      },{passive:true});
+      refDrumZone2.addEventListener('touchmove', e=>{
+        if(rStartY === null) return;
+        const y = e.touches[0].clientY;
+        const now = Date.now(), dt = now - rLastT;
+        if(dt > 0) rVel = (y - rLastY) / dt;
+        rLastY = y; rLastT = now;
+        refApplyDrag(y - rStartY);
+      },{passive:true});
+      const ref2TouchEnd = ()=>{
+        refDrumTouching = false;
+        if(rStartY === null) return;
+        rStartY = null; rInertiaVel = rVel;
+        if(Math.abs(rInertiaVel) > MIN_VEL) rInertiaRAF = requestAnimationFrame(runRefInertia);
+        else { refSnap(); refreshRefFilter(); }
+      };
+      refDrumZone2.addEventListener('touchend', ref2TouchEnd, {passive:true});
+      refDrumZone2.addEventListener('touchcancel', ref2TouchEnd, {passive:true});
+      refDrumZone2.addEventListener('mousedown', e=>{
+        refDrumTouching = true; stopRefInertia();
+        if(!refTimeManual) refMinutes = nowRefMinutes();
+        rStartY = e.clientY; rStartMin = refMinutes; rStartPhase = refDrumPhase;
+        rLastY = e.clientY; rLastT = Date.now(); rVel = 0;
+        e.preventDefault();
+      });
+    }
+
     drawDrum();
 
     let vehicles = loadVehicles();
