@@ -3058,17 +3058,22 @@
       overflow: hidden;
       box-sizing: border-box;
       opacity: 0; pointer-events: none;
-      will-change: width, height, transform, opacity;
+      will-change: width, height, opacity;
       transition: width .42s cubic-bezier(.22,1,.36,1),
                   height .42s cubic-bezier(.22,1,.36,1),
                   border-radius .42s cubic-bezier(.22,1,.36,1),
                   box-shadow .42s ease,
-                  transform .3s cubic-bezier(.25,.46,.45,.94),
                   opacity .28s cubic-bezier(.25,.46,.45,.94);
     }
     #ajanhetki-card.visible { opacity: 1; pointer-events: auto; }
-    #ajanhetki-card.collapsed { border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,.2); cursor: pointer; }
-    #ajanhetki-card.expanded  { border-radius: 22px;  box-shadow: 0 12px 40px rgba(0,0,0,.22); cursor: grab; }
+    /* 19px = exactly half the 38px pill height, i.e. true semicircular ends.
+       Do NOT use a huge value like 999px here: it renders the same when
+       collapsed, but the ANIMATED value would stay enormous for most of the
+       morph (clamping to a half-circle all the way) and only square off at the
+       very end — which reads as two separate animations. Interpolating 19→22px
+       keeps the corners consistent, so the box changes shape in one motion. */
+    #ajanhetki-card.collapsed { border-radius: 19px; box-shadow: 0 2px 8px rgba(0,0,0,.2); cursor: pointer; }
+    #ajanhetki-card.expanded  { border-radius: 22px; box-shadow: 0 12px 40px rgba(0,0,0,.22); cursor: grab; }
     #ajanhetki-card.expanded:active { cursor: grabbing; }
 
     /* Pill face — pinned bottom-left, exactly where the collapsed card sits. */
@@ -13032,27 +13037,34 @@
     let ajanhetkiState = 'collapsed';   // 'collapsed' | 'expanded'
     let ajanhetkiSize  = 'medium';      // 'medium' | 'large'  (while expanded)
 
-    // Measure the three target boxes and apply the one for the current state.
-    function applyAjanhetkiGeometry(){
+    // Measure the three target boxes: pill, medium and large.
+    function ajanhetkiMetrics(){
       const card   = document.getElementById('ajanhetki-card');
       const anchor = document.getElementById('ajanhetki-anchor');
       const face   = document.getElementById('ajanhetki-float');
       const pill   = document.getElementById('ajanhetki-pill');
-      if (!card || !anchor || !face || !pill) return;
+      if (!card || !anchor || !face || !pill) return null;
       // Hold the window face at its full expanded width so its layout never
       // reflows while the card animates — the card just clips it.
       const cardW = Math.min(AH_MAX_W, anchor.clientWidth || AH_MAX_W);
       face.style.width = cardW + 'px';
-      if (ajanhetkiState === 'collapsed') {
-        card.style.width  = pill.offsetWidth + 'px';   // shrink-to-fit: label + clock
-        card.style.height = AH_PILL_H + 'px';
-        return;
-      }
       const body    = face.querySelector('.ajanhetki-float-body');
       const hLarge  = face.offsetHeight;                                   // incl. hint rows
       const hMedium = body ? (body.offsetTop + body.offsetHeight + AH_PAD_B) : hLarge;
-      card.style.width  = cardW + 'px';
-      card.style.height = ((ajanhetkiSize === 'large') ? hLarge : hMedium) + 'px';
+      return { card, face, pill, cardW, pillW: pill.offsetWidth, hMedium, hLarge };
+    }
+    // Apply the box for the current state. The card is pinned at bottom-left, so
+    // changing width/height alone morphs it in place — it never travels.
+    function applyAjanhetkiGeometry(){
+      const m = ajanhetkiMetrics();
+      if (!m) return;
+      if (ajanhetkiState === 'collapsed') {
+        m.card.style.width  = m.pillW + 'px';   // shrink-to-fit: label + clock
+        m.card.style.height = AH_PILL_H + 'px';
+      } else {
+        m.card.style.width  = m.cardW + 'px';
+        m.card.style.height = ((ajanhetkiSize === 'large') ? m.hLarge : m.hMedium) + 'px';
+      }
     }
     function setAjanhetkiSize(sz){
       const card = document.getElementById('ajanhetki-card');
@@ -13135,33 +13147,65 @@
       // the "Palauta nykyhetkeen" link, and the drum (which has its own drag).
       const NO_DRAG = '#ajanhetki-float-close, #ref-time-reset-2, #ref-drum-zone-2';
       const isControl = t => !!(t && t.closest && t.closest(NO_DRAG));
-      let dragging = false, startY = 0, dy = 0;
-      // Downward pulls follow the finger; upward is resisted, since large is the
-      // ceiling (which is what the chevron handle is telling the user).
-      const damp = v => (v >= 0 ? Math.min(v, 70) : -Math.min(-v * 0.45, 26));
+      const clamp01 = v => Math.max(0, Math.min(1, v));
+      let dragging = false, startY = 0, dy = 0, dragH0 = 0, dragM = null;
+      const faceEl = document.getElementById('ajanhetki-float');
+      const pillEl = document.getElementById('ajanhetki-pill');
+
       function begin(y){
         if (ajanhetkiState !== 'expanded' || dragging) return;
+        dragM = ajanhetkiMetrics();
+        if (!dragM) return;
         dragging = true; startY = y; dy = 0;
+        dragH0 = (ajanhetkiSize === 'large') ? dragM.hLarge : dragM.hMedium;
+        // Follow the finger exactly — no transitions while dragging.
         card.style.transition = 'none';
+        if (faceEl) faceEl.style.transition = 'none';
+        if (pillEl) pillEl.style.transition = 'none';
       }
+      // The card SHRINKS under the finger; its bottom edge stays pinned, so it
+      // never slides down over the sheet. Dragging past either end is resisted.
       function move(y){
-        if (!dragging) return;
+        if (!dragging || !dragM) return;
+        const m = dragM;
         dy = y - startY;
-        card.style.transform = `translateY(${damp(dy)}px)`;
+        let h = dragH0 - dy;                                   // drag down → shorter
+        if (h > m.hLarge)  h = m.hLarge  + (h - m.hLarge)  * 0.25;
+        if (h < AH_PILL_H) h = AH_PILL_H - (AH_PILL_H - h) * 0.25;
+        h = Math.max(AH_PILL_H - 10, Math.min(m.hLarge + 22, h));
+        // Once below the medium height it also narrows toward the pill's width,
+        // and the two faces cross-fade — so it morphs continuously into the pill.
+        let w = m.cardW;
+        if (h < m.hMedium) {
+          const t = clamp01((h - AH_PILL_H) / Math.max(1, m.hMedium - AH_PILL_H));
+          w = m.pillW + t * (m.cardW - m.pillW);
+          if (faceEl) faceEl.style.opacity = String(t);
+          if (pillEl) pillEl.style.opacity = String(1 - t);
+        } else {
+          if (faceEl) faceEl.style.opacity = '1';
+          if (pillEl) pillEl.style.opacity = '0';
+        }
+        card.style.height = h + 'px';
+        card.style.width  = w + 'px';
       }
       function end(){
         if (!dragging) return;
         dragging = false;
-        card.style.transition = '';   // hand the snap-back to the card's transition
-        card.style.transform  = '';
+        // Hand opacity back to the class rules, and the box back to its transition.
+        if (faceEl) { faceEl.style.opacity = ''; faceEl.style.transition = ''; }
+        if (pillEl) { pillEl.style.opacity = ''; pillEl.style.transition = ''; }
+        card.style.transition = '';
+        void card.offsetWidth;        // flush, so the snap below actually animates
         const TH = 26;
         if (dy > TH) {
           if (ajanhetkiSize === 'large') setAjanhetkiSize('medium');
           else collapseAjanhetkiCard();          // medium → shrinks back into the pill
         } else if (dy < -TH && ajanhetkiSize === 'medium') {
           setAjanhetkiSize('large');
+        } else {
+          applyAjanhetkiGeometry();              // below the threshold: settle back
         }
-        dy = 0;
+        dy = 0; dragM = null;
       }
       card.addEventListener('touchstart',  e => { if (isControl(e.target)) return; begin(e.touches[0].clientY); }, { passive: true });
       card.addEventListener('touchmove',   e => move(e.touches[0].clientY),  { passive: true });
