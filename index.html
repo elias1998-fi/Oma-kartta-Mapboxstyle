@@ -3042,90 +3042,73 @@
       z-index: 6;
       pointer-events: none;
     }
-    #ajanhetki-pill {
+
+    /* ── The morphing card ────────────────────────────────────────────────
+       ONE element. Growing and shrinking is a genuine morph: the card animates
+       its own width, height and corner radius between the pill shape and the
+       window shape, pinned at its bottom-left corner so it expands upward/right
+       and collapses back into exactly the pill's footprint. overflow:hidden
+       clips the window content as the box closes in on it; the two faces inside
+       simply cross-fade. Width/height are set in px from JS (measured), because
+       CSS cannot transition to `auto`. */
+    #ajanhetki-card {
       position: absolute;
       bottom: 0; left: 0;
+      background: #fff;
+      overflow: hidden;
+      box-sizing: border-box;
+      opacity: 0; pointer-events: none;
+      will-change: width, height, transform, opacity;
+      transition: width .42s cubic-bezier(.22,1,.36,1),
+                  height .42s cubic-bezier(.22,1,.36,1),
+                  border-radius .42s cubic-bezier(.22,1,.36,1),
+                  box-shadow .42s ease,
+                  transform .3s cubic-bezier(.25,.46,.45,.94),
+                  opacity .28s cubic-bezier(.25,.46,.45,.94);
+    }
+    #ajanhetki-card.visible { opacity: 1; pointer-events: auto; }
+    #ajanhetki-card.collapsed { border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,.2); cursor: pointer; }
+    #ajanhetki-card.expanded  { border-radius: 22px;  box-shadow: 0 12px 40px rgba(0,0,0,.22); cursor: grab; }
+    #ajanhetki-card.expanded:active { cursor: grabbing; }
+
+    /* Pill face — pinned bottom-left, exactly where the collapsed card sits. */
+    #ajanhetki-pill {
+      position: absolute; bottom: 0; left: 0;
       display: flex; align-items: center; gap: 6px;
       height: 38px; padding: 0 14px;
-      background: #fff; border: none; border-radius: 999px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+      background: none; border: none;
       font-family: Arial, sans-serif; font-size: 13px; font-weight: 700;
       white-space: nowrap; cursor: pointer;
-      opacity: 0; pointer-events: none;
-      transform: translateY(6px) scale(.96);
-      transition: opacity .28s cubic-bezier(.25,.46,.45,.94),
-                  transform .28s cubic-bezier(.25,.46,.45,.94);
+      opacity: 1;
+      transition: opacity .16s ease .14s;   /* fades back IN, after the shrink starts */
     }
-    #ajanhetki-pill.visible {
-      opacity: 1; pointer-events: auto;
-      transform: translateY(0) scale(1);
+    #ajanhetki-card.expanded #ajanhetki-pill {
+      opacity: 0; pointer-events: none;
+      transition: opacity .12s ease;        /* fades straight OUT as it grows */
     }
     #ajanhetki-pill svg { width: 15px; height: 15px; flex-shrink: 0; }
     #ajanhetki-pill .ajanhetki-pill-label { color: #0C0243; }
     #ajanhetki-pill #ajanhetki-pill-time { color: #1266f1; }
 
+    /* Window face — pinned top-left and held at the FULL expanded width in px
+       (set from JS) so its layout never reflows while the card animates; the
+       card just clips more or less of it. */
     #ajanhetki-float {
-      position: absolute;
-      bottom: 0; left: 0;
-      width: min(480px, 100%);
-      z-index: 8;
-      background: #fff; border-radius: 22px;
-      box-shadow: 0 12px 40px rgba(0,0,0,.22);
+      position: absolute; top: 0; left: 0;
+      box-sizing: border-box;
       padding: 7px 14px 12px;
       font-family: Arial, sans-serif;
-      /* Grows from the pill, which sits at this box's bottom-left corner. */
-      transform-origin: bottom left;
-      transform: translateY(6px) scale(.06);
       opacity: 0; pointer-events: none;
-      will-change: transform, opacity;
+      transition: opacity .12s ease;
     }
-    /* Resting visible state, once the genie-in has finished. */
-    #ajanhetki-float.open {
+    #ajanhetki-card.expanded #ajanhetki-float {
       opacity: 1; pointer-events: auto;
-      transform: translateY(0) scale(1);
-      transition: transform .3s cubic-bezier(.25,.46,.45,.94);
+      transition: opacity .2s ease .12s;    /* fades in once the box has room */
     }
-    /* Pullonhenki: width and height grow together as the window puffs UPWARD
-       out of the pill (gentle overshoot), and collapse back down into it. */
-    #ajanhetki-float.opening {
-      animation: ajanhetki-genie-in .4s cubic-bezier(.34,1.56,.44,1) both;
-    }
-    #ajanhetki-float.closing {
-      animation: ajanhetki-genie-out .26s cubic-bezier(.5,0,.85,.15) both;
-      pointer-events: none;
-    }
-    @keyframes ajanhetki-genie-in {
-      0%   { opacity: 0; transform: translateY(6px) scale(.06); }
-      100% { opacity: 1; transform: translateY(0)   scale(1); }
-    }
-    @keyframes ajanhetki-genie-out {
-      0%   { opacity: 1; transform: translateY(0)   scale(1); }
-      100% { opacity: 0; transform: translateY(6px) scale(.06); }
-    }
-    .ajanhetki-float-title { display: block; font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
-    /* × sits to the RIGHT of the drum, pinned to the top of the row. */
-    #ajanhetki-float-close { align-self: flex-start; flex-shrink: 0; width: 28px; height: 28px; margin: -3px -6px 0 0; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-    #ajanhetki-float-close:active { background: #eee; }
-    #ajanhetki-float-close svg { width: 17px; height: 17px; }
-    .ajanhetki-float-body { display: flex; align-items: center; gap: 10px; }
-    .ajanhetki-float-left { flex: 1; min-width: 0; }
-    #ref-time-value-2 { font-size: 26px; font-weight: bold; color: #0C0243; line-height: 1; font-family: Arial, sans-serif; transition: color .2s ease; }
-    #ref-time-value-2.manual { color: #1266f1; }
-    #ref-time-day-2 { font-size: 13px; color: #888; margin-top: 4px; font-family: Arial, sans-serif; }
-    /* visibility (not display) so the link always reserves its space — otherwise
-       the left column changes height and the clock jumps when "Palauta
-       nykyhetkeen" appears/disappears. */
-    #ref-time-reset-2 { display: inline-block; visibility: hidden; margin-top: 6px; border: none; background: none; padding: 0; font-size: 13px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
-    #ref-time-reset-2.visible { visibility: visible; }
 
-    /* Drag handle: same bar as the sheet's, but built from two halves so it can
-       bend into a shallow "down" chevron at the largest size — signalling that
-       the window can only shrink from here. */
-    /* The whole window is the drag surface (see the JS), so the handle is purely
-       a visual affordance: always a shallow "pull me down" chevron, in the
-       medium size as well as the large one. */
-    #ajanhetki-handle-area { display: flex; justify-content: center; padding: 0 0 6px; cursor: grab; touch-action: none; }
-    #ajanhetki-handle-area:active { cursor: grabbing; }
+    /* Drag handle — purely a visual affordance (the whole card is the drag
+       surface). Always a shallow "pull me down" chevron, in both sizes. */
+    #ajanhetki-handle-area { display: flex; justify-content: center; padding: 0 0 6px; touch-action: none; }
     #ajanhetki-handle { position: relative; width: 44px; height: 7px; }
     #ajanhetki-handle span {
       position: absolute; top: 0; width: 24px; height: 4px;
@@ -3134,14 +3117,31 @@
     #ajanhetki-handle span:first-child { left: 0;  transform-origin: left center;  transform: rotate(9deg); }
     #ajanhetki-handle span:last-child  { right: 0; transform-origin: right center; transform: rotate(-9deg); }
 
-    /* Medium size: the hint rows collapse away; the window keeps clock + drum. */
-    .ajanhetki-float-hint { overflow: hidden; max-height: 260px; opacity: 1; margin-top: 11px; font-size: 12px; color: #9a9a9a; line-height: 1.45; font-family: Arial, sans-serif; transition: max-height .32s cubic-bezier(.25,.46,.45,.94), opacity .22s ease, margin-top .32s cubic-bezier(.25,.46,.45,.94); }
-    #ajanhetki-float.size-medium .ajanhetki-float-hint { max-height: 0; opacity: 0; margin-top: 0; }
+    /* One tight row: clock column | drum | ×. */
+    .ajanhetki-float-body { display: flex; align-items: center; gap: 10px; }
+    .ajanhetki-float-left { flex: 1; min-width: 0; }
+    .ajanhetki-float-title { display: block; font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+    #ref-time-value-2 { font-size: 26px; font-weight: bold; color: #0C0243; line-height: 1; font-family: Arial, sans-serif; transition: color .2s ease; }
+    #ref-time-value-2.manual { color: #1266f1; }
+    #ref-time-day-2 { font-size: 13px; color: #888; margin-top: 4px; font-family: Arial, sans-serif; }
+    /* visibility (not display) so the link always reserves its space — otherwise
+       the column changes height and the clock jumps when it appears. */
+    #ref-time-reset-2 { display: inline-block; visibility: hidden; margin-top: 6px; border: none; background: none; padding: 0; font-size: 13px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
+    #ref-time-reset-2.visible { visibility: visible; }
+    /* × sits to the RIGHT of the drum, pinned to the top of the row. */
+    #ajanhetki-float-close { align-self: flex-start; flex-shrink: 0; width: 28px; height: 28px; margin: -3px -6px 0 0; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    #ajanhetki-float-close:active { background: #eee; }
+    #ajanhetki-float-close svg { width: 17px; height: 17px; }
+
+    /* Hint rows: always laid out, so the card's measured heights are stable.
+       At the medium size the card is simply short enough to clip them away. */
+    .ajanhetki-float-hint { margin-top: 11px; font-size: 12px; color: #9a9a9a; line-height: 1.45; font-family: Arial, sans-serif; opacity: 1; transition: opacity .25s ease; }
+    #ajanhetki-card.size-medium .ajanhetki-float-hint { opacity: 0; }
+    .ajanhetki-float-hint .ah-free { text-decoration: underline; text-decoration-color: #7F1F89; text-decoration-thickness: 2px; text-underline-offset: 2px; }
+    .ajanhetki-float-hint .ah-paid { text-decoration: underline; text-decoration-color: #1266f1; text-decoration-thickness: 2px; text-underline-offset: 2px; }
     .ah-hint-row { display: flex; align-items: flex-start; gap: 7px; }
     .ah-hint-row + .ah-hint-row { margin-top: 6px; }
     .ah-bullet { flex-shrink: 0; width: 4px; height: 4px; border-radius: 50%; background: #333; margin-top: 5px; }
-    .ajanhetki-float-hint .ah-free { text-decoration: underline; text-decoration-color: #7F1F89; text-decoration-thickness: 2px; text-underline-offset: 2px; }
-    .ajanhetki-float-hint .ah-paid { text-decoration: underline; text-decoration-color: #1266f1; text-decoration-thickness: 2px; text-underline-offset: 2px; }
     #ref-drum-canvas-2 { display: block; width: 52px; height: 80px; }
 
     .vehicle-display {
@@ -4805,36 +4805,42 @@
          (Old credit, kept for reference:
           <div id="osm-attribution" style="position:absolute;top:-16px;left:8px;z-index:5;font-family:Arial,sans-serif;font-size:10px;color:#000;pointer-events:none;transition:opacity 0.2s ease;">&copy; OpenStreetMap</div>) -->
     <div id="ajanhetki-anchor">
-      <button id="ajanhetki-pill" aria-label="Muokkaa ajanhetkeä">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#1266f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="9"/><path d="M12 7 V12 L15.5 14"/>
-        </svg>
-        <span class="ajanhetki-pill-label">Ajanhetki</span>
-        <span id="ajanhetki-pill-time">–</span>
-      </button>
-      <div id="ajanhetki-float" role="dialog" aria-label="Ajanhetki">
-        <div id="ajanhetki-handle-area"><div id="ajanhetki-handle"><span></span><span></span></div></div>
-        <!-- One tight row: clock column | drum | ×. Merging the old header row
-             into this one keeps the window short so more map stays visible. -->
-        <div class="ajanhetki-float-body">
-          <div class="ajanhetki-float-left">
-            <div class="ajanhetki-float-title">Ajanhetki</div>
-            <div id="ref-time-value-2">–</div>
-            <div id="ref-time-day-2">nykyhetki</div>
-            <button id="ref-time-reset-2">Palauta nykyhetkeen</button>
+      <!-- ONE morphing element. The card itself is what the user sees grow and
+           shrink: it animates its width, height and corner radius between the
+           pill shape and the window shape, clipping its contents as it goes.
+           The two faces below just cross-fade inside it. -->
+      <div id="ajanhetki-card" class="collapsed size-medium">
+        <button id="ajanhetki-pill" aria-label="Muokkaa ajanhetkeä">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1266f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7 V12 L15.5 14"/>
+          </svg>
+          <span class="ajanhetki-pill-label">Ajanhetki</span>
+          <span id="ajanhetki-pill-time">–</span>
+        </button>
+        <div id="ajanhetki-float" role="dialog" aria-label="Ajanhetki">
+          <div id="ajanhetki-handle-area"><div id="ajanhetki-handle"><span></span><span></span></div></div>
+          <!-- One tight row: clock column | drum | ×. Merging the old header row
+               into this one keeps the window short so more map stays visible. -->
+          <div class="ajanhetki-float-body">
+            <div class="ajanhetki-float-left">
+              <div class="ajanhetki-float-title">Ajanhetki</div>
+              <div id="ref-time-value-2">–</div>
+              <div id="ref-time-day-2">nykyhetki</div>
+              <button id="ref-time-reset-2">Palauta nykyhetkeen</button>
+            </div>
+            <div class="drum-scroll-zone" id="ref-drum-zone-2">
+              <canvas id="ref-drum-canvas-2" width="52" height="80"></canvas>
+            </div>
+            <button id="ajanhetki-float-close" aria-label="Sulje">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+              </svg>
+            </button>
           </div>
-          <div class="drum-scroll-zone" id="ref-drum-zone-2">
-            <canvas id="ref-drum-canvas-2" width="52" height="80"></canvas>
+          <div class="ajanhetki-float-hint">
+            <div class="ah-hint-row"><span class="ah-bullet"></span><span>Vieritä rullaa säätääksesi ajanhetkeä, jolloin pysäköintialueet ovat <span class="ah-free">ilmaisia</span> tai <span class="ah-paid">maksullisia</span>.</span></div>
+            <div class="ah-hint-row"><span class="ah-bullet"></span><span>Huom! Tarkista aina ajantasainen tieto liikennemerkistä ennen pysäköintiä.</span></div>
           </div>
-          <button id="ajanhetki-float-close" aria-label="Sulje">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
-              <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
-            </svg>
-          </button>
-        </div>
-        <div class="ajanhetki-float-hint">
-          <div class="ah-hint-row"><span class="ah-bullet"></span><span>Vieritä rullaa säätääksesi ajanhetkeä, jolloin pysäköintialueet ovat <span class="ah-free">ilmaisia</span> tai <span class="ah-paid">maksullisia</span>.</span></div>
-          <div class="ah-hint-row"><span class="ah-bullet"></span><span>Huom! Tarkista aina ajantasainen tieto liikennemerkistä ennen pysäköintiä.</span></div>
         </div>
       </div>
     </div>
@@ -12986,6 +12992,9 @@
         }
       }
       updateAjanhetkiPillVisibility();
+      // The pill's text ("Ajanhetki 11:30" vs "Nykyhetki 9:05") changes width,
+      // and the collapsed card is sized to fit it exactly — so re-measure.
+      applyAjanhetkiGeometry();
     }
     // ── Sheet-linked fade ────────────────────────────────────────────────
     // The anchor rides with the sheet and fades as the sheet is opened, exactly
@@ -13006,132 +13015,161 @@
       const o = Math.max(0, Math.min(1, 1 - (visibleH - fadeStart) / (fullOpen - fadeStart)));
       el.style.opacity = o;
       // Once faded out, stop catching taps (inline style beats the class rules).
-      const dead = (o < 0.05) ? 'none' : '';
-      const pill = document.getElementById('ajanhetki-pill');
-      const fl   = document.getElementById('ajanhetki-float');
-      if (pill) pill.style.pointerEvents = dead;
-      if (fl)   fl.style.pointerEvents   = dead;
+      const card = document.getElementById('ajanhetki-card');
+      if (card) card.style.pointerEvents = (o < 0.05) ? 'none' : '';
     }
     function ajanhetkiFadeLoop(){ applyAjanhetkiFade(); _ahFadeRAF = requestAnimationFrame(ajanhetkiFadeLoop); }
     function startAjanhetkiFade(){ if (_ahFadeRAF == null) { _ahLastTop = null; ajanhetkiFadeLoop(); } }
     function stopAjanhetkiFade(){ if (_ahFadeRAF != null) { cancelAnimationFrame(_ahFadeRAF); _ahFadeRAF = null; } }
 
-    // ── Pill / window sizing ─────────────────────────────────────────────
-    // Three sizes: pill (closed) → medium (clock + drum) → large (adds the hint
-    // rows). Tapping the pill opens it at medium; the drag handle moves between
-    // sizes and is the ONLY way to shrink it — map panning and "Palauta
-    // nykyhetkeen" no longer collapse it.
-    let ajanhetkiSize = 'medium';   // 'medium' | 'large'
-    function setAjanhetkiSize(sz){
-      const fl = document.getElementById('ajanhetki-float');
-      if (!fl) return;
-      ajanhetkiSize = sz;
-      fl.classList.toggle('size-large',  sz === 'large');
-      fl.classList.toggle('size-medium', sz === 'medium');
-    }
-    // Pill shows while it is summoned (not dismissed), free-parking colouring is
-    // on, the filter sheet is closed, and the window isn't already open.
-    function updateAjanhetkiPillVisibility(){
-      const pill = document.getElementById('ajanhetki-pill');
-      if (!pill) return;
-      const fl = document.getElementById('ajanhetki-float');
-      const floatOpen = !!(fl && (fl.classList.contains('open') || fl.classList.contains('opening')));
-      const active = !ajanhetkiDismissed && showFreeParking && !filterMode;
-      pill.classList.toggle('visible', active && !floatOpen);
-      if (active) startAjanhetkiFade(); else stopAjanhetkiFade();
-    }
-    function openAjanhetkiFloat(){
-      const fl = document.getElementById('ajanhetki-float');
-      if (!fl) return;
-      const pill = document.getElementById('ajanhetki-pill');
-      if (pill) pill.classList.remove('visible');   // pill streams up into the window
-      fl.style.transition = ''; fl.style.transform = '';
-      fl.classList.remove('closing');
-      fl.classList.add('open');
-      fl.classList.add('opening');   // plays genie-in; removed on animationend
-      setAjanhetkiSize('medium');    // opens at the medium size
-      updateRefTimeUI();   // refresh mirror value / day / reset
-      drawRefDrum();       // paint the floating drum
-    }
-    function closeAjanhetkiFloat(){
-      const fl = document.getElementById('ajanhetki-float');
-      if (!fl) return;
-      if (fl.classList.contains('open') || fl.classList.contains('opening')) {
-        fl.style.transition = ''; fl.style.transform = '';
-        fl.classList.remove('open');
-        fl.classList.remove('opening');
-        fl.classList.add('closing');   // genie-retract, then hide on animationend
+    // ── One morphing card: pill ⇄ medium ⇄ large ─────────────────────────
+    // The card is a single element that animates its own width/height/radius
+    // between the three shapes. CSS cannot transition to height:auto, so the
+    // target box is measured here and written as px.
+    const AH_PILL_H = 38;    // pill height, matches #ajanhetki-pill
+    const AH_PAD_B  = 12;    // #ajanhetki-float bottom padding
+    const AH_MAX_W  = 480;   // widest the expanded card ever gets
+    let ajanhetkiState = 'collapsed';   // 'collapsed' | 'expanded'
+    let ajanhetkiSize  = 'medium';      // 'medium' | 'large'  (while expanded)
+
+    // Measure the three target boxes and apply the one for the current state.
+    function applyAjanhetkiGeometry(){
+      const card   = document.getElementById('ajanhetki-card');
+      const anchor = document.getElementById('ajanhetki-anchor');
+      const face   = document.getElementById('ajanhetki-float');
+      const pill   = document.getElementById('ajanhetki-pill');
+      if (!card || !anchor || !face || !pill) return;
+      // Hold the window face at its full expanded width so its layout never
+      // reflows while the card animates — the card just clips it.
+      const cardW = Math.min(AH_MAX_W, anchor.clientWidth || AH_MAX_W);
+      face.style.width = cardW + 'px';
+      if (ajanhetkiState === 'collapsed') {
+        card.style.width  = pill.offsetWidth + 'px';   // shrink-to-fit: label + clock
+        card.style.height = AH_PILL_H + 'px';
+        return;
       }
-      updateAjanhetkiPillVisibility();   // pill returns unless dismissed
+      const body    = face.querySelector('.ajanhetki-float-body');
+      const hLarge  = face.offsetHeight;                                   // incl. hint rows
+      const hMedium = body ? (body.offsetTop + body.offsetHeight + AH_PAD_B) : hLarge;
+      card.style.width  = cardW + 'px';
+      card.style.height = ((ajanhetkiSize === 'large') ? hLarge : hMedium) + 'px';
     }
+    function setAjanhetkiSize(sz){
+      const card = document.getElementById('ajanhetki-card');
+      if (!card) return;
+      ajanhetkiSize = sz;
+      card.classList.toggle('size-large',  sz === 'large');
+      card.classList.toggle('size-medium', sz === 'medium');
+      applyAjanhetkiGeometry();
+    }
+    // The card is shown while summoned (not dismissed), free-parking colouring is
+    // on, and the filter sheet is closed.
+    function updateAjanhetkiPillVisibility(){
+      const card = document.getElementById('ajanhetki-card');
+      if (!card) return;
+      const active = !ajanhetkiDismissed && showFreeParking && !filterMode;
+      card.classList.toggle('visible', active);
+      if (active) { applyAjanhetkiGeometry(); startAjanhetkiFade(); }
+      else {
+        stopAjanhetkiFade();
+        if (ajanhetkiState === 'expanded') collapseAjanhetkiCard();   // reappears as a pill
+      }
+    }
+    function expandAjanhetkiCard(){
+      const card = document.getElementById('ajanhetki-card');
+      if (!card) return;
+      card.style.transition = ''; card.style.transform = '';
+      ajanhetkiState = 'expanded';
+      card.classList.remove('collapsed');
+      card.classList.add('expanded');
+      setAjanhetkiSize('medium');   // opens at the medium size
+    }
+    function collapseAjanhetkiCard(){
+      const card = document.getElementById('ajanhetki-card');
+      if (!card) return;
+      card.style.transition = ''; card.style.transform = '';
+      ajanhetkiState = 'collapsed';
+      card.classList.remove('expanded');
+      card.classList.add('collapsed');
+      applyAjanhetkiGeometry();     // shrinks straight back into the pill's footprint
+    }
+    // Kept under the old names: several call sites already use them.
+    function openAjanhetkiFloat(){
+      expandAjanhetkiCard();
+      updateRefTimeUI();   // refresh mirror value / day / reset
+      drawRefDrum();       // paint the card's drum
+    }
+    function closeAjanhetkiFloat(){ collapseAjanhetkiCard(); }
+
     (function wireAjanhetkiControls(){
+      const card = document.getElementById('ajanhetki-card');
       const pill = document.getElementById('ajanhetki-pill');
-      if (pill) pill.addEventListener('click', openAjanhetkiFloat);
-      const fl0 = document.getElementById('ajanhetki-float');
-      // Once a genie animation finishes, drop its class so the resting state applies.
-      if (fl0) fl0.addEventListener('animationend', (e) => {
-        if (e.animationName === 'ajanhetki-genie-in')  fl0.classList.remove('opening');
-        if (e.animationName === 'ajanhetki-genie-out') fl0.classList.remove('closing');
-      });
-      // The pill and window are children of the sheet now, so their gestures must
+      if (!card) return;
+      // Tapping the pill face grows the card to the medium size.
+      if (pill) pill.addEventListener('click', () => { if (ajanhetkiState === 'collapsed') openAjanhetkiFloat(); });
+      // The card and the window live inside the sheet now, so their gestures must
       // not bubble up and start a sheet drag.
       const anchor = document.getElementById('ajanhetki-anchor');
       if (anchor) {
         anchor.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
         anchor.addEventListener('mousedown',  e => e.stopPropagation());
       }
-      // × fully dismisses the pill and returns the map to live ("nykyhetki")
+      // × dismisses the card entirely and returns the map to live ("nykyhetki")
       // colouring, so the map is never left tinted for a hidden manual time.
       const cl = document.getElementById('ajanhetki-float-close');
       if (cl) cl.addEventListener('click', () => {
         ajanhetkiDismissed = true;
+        collapseAjanhetkiCard();
         resetRefTime();
-        closeAjanhetkiFloat();
       });
-      // "Palauta nykyhetkeen" returns to live time and LEAVES the window open;
+      // "Palauta nykyhetkeen" returns to live time and LEAVES the card open;
       // the label simply flips to "Nykyhetki HH:MM".
       const rs = document.getElementById('ref-time-reset-2');
       if (rs) rs.addEventListener('click', () => { resetRefTime(); });
+      // Re-measure when the viewport changes (the expanded width is viewport-based).
+      window.addEventListener('resize', () => setTimeout(applyAjanhetkiGeometry, 60));
 
-      // ── Resize drag: medium ⇄ large, and medium → pill ─────────────────
-      // The whole window is the drag surface — no need to grab the little handle
+      // ── Resize drag: large ⇄ medium, and medium → pill ─────────────────
+      // The whole card is the drag surface — no need to grab the little handle
       // precisely. Only the three real controls are carved out: the × button,
       // the "Palauta nykyhetkeen" link, and the drum (which has its own drag).
-      if (fl0) {
-        const NO_DRAG = '#ajanhetki-float-close, #ref-time-reset-2, #ref-drum-zone-2';
-        const isControl = t => !!(t && t.closest && t.closest(NO_DRAG));
-        let dragging = false, startY = 0, dy = 0;
-        // Downward pulls follow the finger; upward is resisted, since large is
-        // the ceiling (which is what the chevron handle is telling the user).
-        const damp = v => (v >= 0 ? Math.min(v, 70) : -Math.min(-v * 0.45, 26));
-        function begin(y){ dragging = true; startY = y; dy = 0; fl0.style.transition = 'none'; }
-        function move(y){
-          if (!dragging) return;
-          dy = y - startY;
-          fl0.style.transform = `translateY(${damp(dy)}px) scale(1)`;
-        }
-        function end(){
-          if (!dragging) return;
-          dragging = false;
-          fl0.style.transition = '';   // hand the snap-back to the .open transition
-          fl0.style.transform  = '';
-          const TH = 26;
-          if (dy > TH) {
-            if (ajanhetkiSize === 'large') setAjanhetkiSize('medium');
-            else closeAjanhetkiFloat();          // medium → back down to the pill
-          } else if (dy < -TH && ajanhetkiSize === 'medium') {
-            setAjanhetkiSize('large');
-          }
-          dy = 0;
-        }
-        fl0.addEventListener('touchstart',  e => { if (isControl(e.target)) return; begin(e.touches[0].clientY); }, { passive: true });
-        fl0.addEventListener('touchmove',   e => move(e.touches[0].clientY),  { passive: true });
-        fl0.addEventListener('touchend',    end, { passive: true });
-        fl0.addEventListener('touchcancel', end, { passive: true });
-        fl0.addEventListener('mousedown',   e => { if (isControl(e.target)) return; e.preventDefault(); begin(e.clientY); });
-        window.addEventListener('mousemove', e => { if (dragging) move(e.clientY); });
-        window.addEventListener('mouseup',   () => { if (dragging) end(); });
+      const NO_DRAG = '#ajanhetki-float-close, #ref-time-reset-2, #ref-drum-zone-2';
+      const isControl = t => !!(t && t.closest && t.closest(NO_DRAG));
+      let dragging = false, startY = 0, dy = 0;
+      // Downward pulls follow the finger; upward is resisted, since large is the
+      // ceiling (which is what the chevron handle is telling the user).
+      const damp = v => (v >= 0 ? Math.min(v, 70) : -Math.min(-v * 0.45, 26));
+      function begin(y){
+        if (ajanhetkiState !== 'expanded' || dragging) return;
+        dragging = true; startY = y; dy = 0;
+        card.style.transition = 'none';
       }
+      function move(y){
+        if (!dragging) return;
+        dy = y - startY;
+        card.style.transform = `translateY(${damp(dy)}px)`;
+      }
+      function end(){
+        if (!dragging) return;
+        dragging = false;
+        card.style.transition = '';   // hand the snap-back to the card's transition
+        card.style.transform  = '';
+        const TH = 26;
+        if (dy > TH) {
+          if (ajanhetkiSize === 'large') setAjanhetkiSize('medium');
+          else collapseAjanhetkiCard();          // medium → shrinks back into the pill
+        } else if (dy < -TH && ajanhetkiSize === 'medium') {
+          setAjanhetkiSize('large');
+        }
+        dy = 0;
+      }
+      card.addEventListener('touchstart',  e => { if (isControl(e.target)) return; begin(e.touches[0].clientY); }, { passive: true });
+      card.addEventListener('touchmove',   e => move(e.touches[0].clientY),  { passive: true });
+      card.addEventListener('touchend',    end, { passive: true });
+      card.addEventListener('touchcancel', end, { passive: true });
+      card.addEventListener('mousedown',   e => { if (isControl(e.target)) return; e.preventDefault(); begin(e.clientY); });
+      window.addEventListener('mousemove', e => { if (dragging) move(e.clientY); });
+      window.addEventListener('mouseup',   () => { if (dragging) end(); });
     })();
 
     // Floating-window drum: additive binding reusing the shared drag state and
