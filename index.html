@@ -1861,8 +1861,12 @@
     #ref-time-value { font-size: 26px; font-weight: bold; color: #0C0243; line-height: 1; font-family: Arial, sans-serif; transition: color 0.2s ease; }
     #ref-time-value.manual { color: #1266f1; }
     #ref-time-day { font-size: 12px; color: #888; margin-top: 4px; font-family: Arial, sans-serif; }
-    #ref-time-reset { display: none; margin-top: 6px; border: none; background: none; padding: 0; font-size: 12px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
-    #ref-time-reset.visible { display: inline-block; }
+    /* visibility (not display) so the link always reserves its space. With
+       display:none the left column changed height when "Palauta nykyhetkeen"
+       appeared, and because the row is centre-aligned the clock and drum
+       jumped between "nykyhetki" and a manually set time. */
+    #ref-time-reset { display: inline-block; visibility: hidden; margin-top: 6px; border: none; background: none; padding: 0; font-size: 12px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
+    #ref-time-reset.visible { visibility: visible; }
 
     /* Colour legend under the Ajanhetki drum */
     #ref-legend { margin-top: 16px; }
@@ -3079,11 +3083,9 @@
     /* Pill face — pinned bottom-left, exactly where the collapsed card sits. */
     #ajanhetki-pill {
       position: absolute; bottom: 0; left: 0;
-      display: flex; align-items: center; gap: 6px;
-      height: 38px; padding: 0 14px;
-      background: none; border: none;
-      font-family: Arial, sans-serif; font-size: 13px; font-weight: 700;
-      white-space: nowrap; cursor: pointer;
+      display: flex; align-items: center;
+      height: 38px; padding: 0 14px 0 7px;
+      white-space: nowrap;
       opacity: 1;
       transition: opacity .16s ease .14s;   /* fades back IN, after the shrink starts */
     }
@@ -3091,9 +3093,36 @@
       opacity: 0; pointer-events: none;
       transition: opacity .12s ease;        /* fades straight OUT as it grows */
     }
-    #ajanhetki-pill svg { width: 15px; height: 15px; flex-shrink: 0; }
-    #ajanhetki-pill .ajanhetki-pill-label { color: #0C0243; }
-    #ajanhetki-pill #ajanhetki-pill-time { color: #1266f1; }
+    /* × — deliberately set apart from the label: its own tinted circle plus a
+       hairline divider, so it reads as a separate button rather than part of
+       the pill's text. Tapping it removes the pill; tapping anywhere to the
+       right of the divider grows the card. */
+    #ajanhetki-dismiss {
+      flex-shrink: 0;
+      width: 25px; height: 25px; padding: 0;
+      border: none; border-radius: 50%;
+      background: #eeeef1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    #ajanhetki-dismiss:active { background: #dededf; }
+    #ajanhetki-dismiss svg { width: 11px; height: 11px; }
+    .ajanhetki-pill-sep {
+      flex-shrink: 0;
+      width: 1px; height: 19px;
+      background: #e3e3e8;
+      margin: 0 9px 0 7px;
+    }
+    #ajanhetki-pill-main {
+      display: flex; align-items: center; gap: 6px;
+      height: 100%; padding: 0;
+      background: none; border: none;
+      font-family: Arial, sans-serif; font-size: 13px; font-weight: 700;
+      white-space: nowrap; cursor: pointer;
+    }
+    #ajanhetki-pill-main svg { width: 15px; height: 15px; flex-shrink: 0; }
+    #ajanhetki-pill-main .ajanhetki-pill-label { color: #0C0243; }
+    #ajanhetki-pill-main #ajanhetki-pill-time { color: #1266f1; }
 
     /* Window face — pinned top-left and held at the FULL expanded width in px
        (set from JS) so its layout never reflows while the card animates; the
@@ -3119,8 +3148,8 @@
       position: absolute; top: 0; width: 24px; height: 4px;
       border-radius: 2px; background: #ddd;
     }
-    #ajanhetki-handle span:first-child { left: 0;  transform-origin: left center;  transform: rotate(9deg); }
-    #ajanhetki-handle span:last-child  { right: 0; transform-origin: right center; transform: rotate(-9deg); }
+    #ajanhetki-handle span:first-child { left: 0;  transform-origin: left center;  transform: rotate(13deg); }
+    #ajanhetki-handle span:last-child  { right: 0; transform-origin: right center; transform: rotate(-13deg); }
 
     /* One tight row: clock column | drum | ×. */
     .ajanhetki-float-body { display: flex; align-items: center; gap: 10px; }
@@ -3133,10 +3162,9 @@
        the column changes height and the clock jumps when it appears. */
     #ref-time-reset-2 { display: inline-block; visibility: hidden; margin-top: 6px; border: none; background: none; padding: 0; font-size: 13px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
     #ref-time-reset-2.visible { visibility: visible; }
-    /* × sits to the RIGHT of the drum, pinned to the top of the row. */
-    #ajanhetki-float-close { align-self: flex-start; flex-shrink: 0; width: 28px; height: 28px; margin: -3px -6px 0 0; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-    #ajanhetki-float-close:active { background: #eee; }
-    #ajanhetki-float-close svg { width: 17px; height: 17px; }
+    /* No × in the window any more — dismissing lives on the pill. The drum
+       therefore sits flush against the window's right edge. */
+    #ref-drum-zone-2 { margin-right: -2px; }
 
     /* Hint rows: always laid out, so the card's measured heights are stable.
        At the medium size the card is simply short enough to clip them away. */
@@ -3596,8 +3624,9 @@
         </div>
       </div>
 
-      <!-- Collapsed "Muut" group. Tap header to toggle expansion. -->
-      <div class="settings-section">
+      <!-- Admin tools. Hidden unless "Näytä admin muokkaustyökalut" is switched
+           on in Asetukset → Muut. -->
+      <div class="settings-section" id="profile-admin-section" style="display:none;">
         <div class="settings-item settings-expander" id="muut-expander" onclick="toggleMuutSection()">
           <div class="settings-item-icon">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -3636,16 +3665,6 @@
             </div>
             <div class="settings-item-chevron">›</div>
           </div>
-        </div>
-      </div>
-
-      <!-- Language quick-switch: small, flat (no card) row at the very bottom -->
-      <div class="lang-quickrow">
-        <div class="lang-quickrow-label">Kieli</div>
-        <div class="lang-quickrow-options">
-          <span class="lang-opt selected" data-lang="fi" onclick="setLang('fi', this)">FI</span>
-          <span class="lang-opt"          data-lang="sv" onclick="setLang('sv', this)">SV</span>
-          <span class="lang-opt"          data-lang="en" onclick="setLang('en', this)">EN</span>
         </div>
       </div>
     </div>
@@ -4263,6 +4282,27 @@
             <span class="ios-switch-track"></span>
           </label>
         </div>
+        <!-- Off by default: the zoom read-out on the sheet only appears when on. -->
+        <div class="settings-row-toggle">
+          <div class="settings-row-text">
+            <div class="settings-row-title">Näytä zoom taso</div>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="setting-zoom-level" onchange="onZoomLevelToggle(this)">
+            <span class="ios-switch-track"></span>
+          </label>
+        </div>
+        <!-- Off by default. When on, the "Muut" group (Hallinto / Alueiden
+             muokkaus) appears in the profile view. -->
+        <div class="settings-row-toggle">
+          <div class="settings-row-text">
+            <div class="settings-row-title">Näytä admin muokkaustyökalut</div>
+          </div>
+          <label class="ios-switch">
+            <input type="checkbox" id="setting-admin-tools" onchange="onAdminToolsToggle(this)">
+            <span class="ios-switch-track"></span>
+          </label>
+        </div>
         <!-- Language collapsible: header row shows current language; tapping
              opens a list of language options. -->
         <div class="settings-row-toggle settings-lang-header" onclick="toggleLanguageRow()">
@@ -4815,13 +4855,24 @@
            pill shape and the window shape, clipping its contents as it goes.
            The two faces below just cross-fade inside it. -->
       <div id="ajanhetki-card" class="collapsed size-medium">
-        <button id="ajanhetki-pill" aria-label="Muokkaa ajanhetkeä">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#1266f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="9"/><path d="M12 7 V12 L15.5 14"/>
-          </svg>
-          <span class="ajanhetki-pill-label">Ajanhetki</span>
-          <span id="ajanhetki-pill-time">–</span>
-        </button>
+        <!-- Pill face. The × is its own button at the left, set apart by a tinted
+             circle and a hairline divider so it reads as a separate control
+             rather than part of the pill's label. -->
+        <div id="ajanhetki-pill">
+          <button id="ajanhetki-dismiss" aria-label="Poista ajanhetki näkyvistä">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#8a8a90" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
+              <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+            </svg>
+          </button>
+          <span class="ajanhetki-pill-sep"></span>
+          <button id="ajanhetki-pill-main" aria-label="Muokkaa ajanhetkeä">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1266f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/><path d="M12 7 V12 L15.5 14"/>
+            </svg>
+            <span class="ajanhetki-pill-label">Ajanhetki</span>
+            <span id="ajanhetki-pill-time">–</span>
+          </button>
+        </div>
         <div id="ajanhetki-float" role="dialog" aria-label="Ajanhetki">
           <div id="ajanhetki-handle-area"><div id="ajanhetki-handle"><span></span><span></span></div></div>
           <!-- One tight row: clock column | drum | ×. Merging the old header row
@@ -4836,11 +4887,6 @@
             <div class="drum-scroll-zone" id="ref-drum-zone-2">
               <canvas id="ref-drum-canvas-2" width="52" height="80"></canvas>
             </div>
-            <button id="ajanhetki-float-close" aria-label="Sulje">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
-                <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
-              </svg>
-            </button>
           </div>
           <div class="ajanhetki-float-hint">
             <div class="ah-hint-row"><span class="ah-bullet"></span><span>Vieritä rullaa säätääksesi ajanhetkeä, jolloin pysäköintialueet ovat <span class="ah-free">ilmaisia</span> tai <span class="ah-paid">maksullisia</span>.</span></div>
@@ -5250,6 +5296,11 @@
     });
 
     const API_KEY = 'a002614565b24559b3feddfca8d01918';
+
+    // Zoom the map settles on when a parking area, charging station or garage is
+    // tapped. The P-marker lives at the map centre, so flying to the feature's
+    // centre puts the marker right on it.
+    const SELECT_ZOOM = 15.5;
 
     // ── Mapbox ──────────────────────────────────────────────────────────────
     // Public token. HUOM: tämä on tilin oletustoken, johon EI voi lisätä URL-
@@ -7940,7 +7991,9 @@
         // In filter view, close it first so the user returns to the normal map
         // with the P-marker landing on the selected area.
         if (filterMode) closeFilter();
-        map.flyTo({ center:[lng,lat], zoom: Math.max(map.getZoom(), 16), duration: 800 });
+        // Always settle on the area's centre at a fixed zoom, so the P-marker
+        // (which sits at the map centre) lands squarely on the selected area.
+        map.flyTo({ center:[lng,lat], zoom: SELECT_ZOOM, duration: 800 });
       }
     });
 
@@ -8054,7 +8107,7 @@
         map.on('click', 'halli-icons', (e) => {
           showHalliInfo(e);
           const coords = e.features[0].geometry.coordinates;
-          map.flyTo({ center: coords, zoom: 16, duration: 800 });
+          map.flyTo({ center: coords, zoom: SELECT_ZOOM, duration: 800 });
         });
         map.on('mouseleave', 'halli-icons', () => {
           map.getCanvas().style.cursor = '';
@@ -9555,6 +9608,52 @@
     }
     // Reflect the saved dark-mode state in the settings switch on startup.
     (function(){ const cb = document.getElementById('setting-darkmode'); if (cb) cb.checked = darkModeEnabled; })();
+
+    // ── Zoom read-out toggle ─────────────────────────────────────────────
+    // Off by default: the sheet's zoom indicator only shows when switched on.
+    let zoomLevelEnabled = (function(){ try { return localStorage.getItem('tp_zoom_level') === '1'; } catch(e){ return false; } })();
+    function applyZoomIndicatorVisibility() {
+      const zi = document.getElementById('zoom-indicator');
+      if (zi) zi.style.display = zoomLevelEnabled ? '' : 'none';
+    }
+    function onZoomLevelToggle(input) {
+      onSettingToggle(input);
+      zoomLevelEnabled = input.checked;
+      try { localStorage.setItem('tp_zoom_level', zoomLevelEnabled ? '1' : '0'); } catch(e){}
+      applyZoomIndicatorVisibility();
+    }
+    (function(){
+      const cb = document.getElementById('setting-zoom-level');
+      if (cb) cb.checked = zoomLevelEnabled;
+      applyZoomIndicatorVisibility();
+    })();
+
+    // ── Admin tools toggle ───────────────────────────────────────────────
+    // Off by default. The profile's "Muut" group (Hallinto / Alueiden muokkaus)
+    // only exists in the UI while this is on.
+    let adminToolsEnabled = (function(){ try { return localStorage.getItem('tp_admin_tools') === '1'; } catch(e){ return false; } })();
+    function applyAdminToolsVisibility() {
+      const sec = document.getElementById('profile-admin-section');
+      if (sec) sec.style.display = adminToolsEnabled ? '' : 'none';
+      if (!adminToolsEnabled) {
+        // Collapse it too, so it doesn't reappear expanded when switched back on.
+        const expander = document.getElementById('muut-expander');
+        const content  = document.getElementById('muut-content');
+        if (expander) expander.classList.remove('open');
+        if (content)  content.classList.remove('open');
+      }
+    }
+    function onAdminToolsToggle(input) {
+      onSettingToggle(input);
+      adminToolsEnabled = input.checked;
+      try { localStorage.setItem('tp_admin_tools', adminToolsEnabled ? '1' : '0'); } catch(e){}
+      applyAdminToolsVisibility();
+    }
+    (function(){
+      const cb = document.getElementById('setting-admin-tools');
+      if (cb) cb.checked = adminToolsEnabled;
+      applyAdminToolsVisibility();
+    })();
     // Language section: header toggles the collapsible list of options
     function toggleLanguageRow() {
       const hdr = document.querySelector('.settings-lang-header');
@@ -11202,7 +11301,7 @@
                 hoveredChargingId = ft.properties.id;
                 scheduleHitRefetch();   // freshen this station's status on tap
                 showChargingInSheet(ft.properties);
-                if(coords) map.flyTo({ center: coords, zoom: 16, duration: 800 });
+                if(coords) map.flyTo({ center: coords, zoom: SELECT_ZOOM, duration: 800 });
               });
             }
           }
@@ -12187,7 +12286,7 @@
       filterBtn.classList.remove('filter-on');
       filterCloseBtn.classList.remove('visible');
       // Restore zoom indicator (GPS warning visibility managed by checkParking)
-      const zi = document.getElementById('zoom-indicator'); if (zi) zi.style.display = '';
+      applyZoomIndicatorVisibility();   // restore it only if the setting is on
       const gw = document.getElementById('gps-warning'); if (gw) gw.style.display = '';
       // Restore P-marker — checkParking() below re-applies zoom-based visibility
       centerPointerEl.classList.remove('hidden');
@@ -13015,7 +13114,13 @@
       if (top === _ahLastTop) return;
       _ahLastTop = top;
       const visibleH  = Math.max(0, window.innerHeight - top);  // sheet height on screen
-      const fadeStart = 153;                                    // solid until the sheet grows past this
+      // The sheet's automatic resting heights are 60 / 90 / 150 / 153 px (peek,
+      // no area, area selected). The fade used to begin at exactly 153, i.e. right
+      // ON the "area selected" height — so the pill was left slightly translucent
+      // whenever the P-marker sat on an area. Start well clear of all of them:
+      // the pill is fully solid at every automatic height, and only begins to
+      // fade once the user actually drags the sheet up past them.
+      const fadeStart = Math.max(210, window.innerHeight * 0.30);
       const fullOpen  = window.innerHeight * 0.8;               // gone once the sheet is fully open
       const o = Math.max(0, Math.min(1, 1 - (visibleH - fadeStart) / (fullOpen - fadeStart)));
       el.style.opacity = o;
@@ -13115,10 +13220,10 @@
 
     (function wireAjanhetkiControls(){
       const card = document.getElementById('ajanhetki-card');
-      const pill = document.getElementById('ajanhetki-pill');
+      const pillMain = document.getElementById('ajanhetki-pill-main');
       if (!card) return;
-      // Tapping the pill face grows the card to the medium size.
-      if (pill) pill.addEventListener('click', () => { if (ajanhetkiState === 'collapsed') openAjanhetkiFloat(); });
+      // Tapping the pill (right of the divider) grows the card to the medium size.
+      if (pillMain) pillMain.addEventListener('click', () => { if (ajanhetkiState === 'collapsed') openAjanhetkiFloat(); });
       // The card and the window live inside the sheet now, so their gestures must
       // not bubble up and start a sheet drag.
       const anchor = document.getElementById('ajanhetki-anchor');
@@ -13126,10 +13231,12 @@
         anchor.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
         anchor.addEventListener('mousedown',  e => e.stopPropagation());
       }
-      // × dismisses the card entirely and returns the map to live ("nykyhetki")
-      // colouring, so the map is never left tinted for a hidden manual time.
-      const cl = document.getElementById('ajanhetki-float-close');
-      if (cl) cl.addEventListener('click', () => {
+      // × on the pill dismisses the card entirely and returns the map to live
+      // ("nykyhetki") colouring, so the map is never left tinted for a hidden
+      // manual time.
+      const cl = document.getElementById('ajanhetki-dismiss');
+      if (cl) cl.addEventListener('click', (e) => {
+        e.stopPropagation();
         ajanhetkiDismissed = true;
         collapseAjanhetkiCard();
         resetRefTime();
@@ -13145,7 +13252,7 @@
       // The whole card is the drag surface — no need to grab the little handle
       // precisely. Only the three real controls are carved out: the × button,
       // the "Palauta nykyhetkeen" link, and the drum (which has its own drag).
-      const NO_DRAG = '#ajanhetki-float-close, #ref-time-reset-2, #ref-drum-zone-2';
+      const NO_DRAG = '#ref-time-reset-2, #ref-drum-zone-2';
       const isControl = t => !!(t && t.closest && t.closest(NO_DRAG));
       const clamp01 = v => Math.max(0, Math.min(1, v));
       let dragging = false, startY = 0, dy = 0, dragH0 = 0, dragM = null;
