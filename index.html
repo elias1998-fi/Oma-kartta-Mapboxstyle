@@ -3030,99 +3030,76 @@
     #drum-canvas { display: block; width: 52px; height: 80px; }
 
     /* ── Ajanhetki pill + floating window ─────────────────────────────── */
+    /* Anchor line sitting just above the sheet's top edge. It's a child of
+       #bottom-sheet, so it rides with the sheet exactly like the old
+       "© OpenStreetMap" credit did. Zero height: the pill and the window hang
+       off its bottom edge and grow UPWARD from there. */
+    #ajanhetki-anchor {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 12px; right: 12px;
+      height: 0;
+      z-index: 6;
+      pointer-events: none;
+    }
     #ajanhetki-pill {
-      position: fixed;
-      top: calc(max(16px, env(safe-area-inset-top)) + 3px);
-      left: 50%;
-      transform: translateX(-50%) translateY(-8px) scale(.96);
-      z-index: 24;
+      position: absolute;
+      bottom: 0; left: 0;
       display: flex; align-items: center; gap: 6px;
-      height: 42px; padding: 0 15px;
+      height: 38px; padding: 0 14px;
       background: #fff; border: none; border-radius: 999px;
       box-shadow: 0 2px 8px rgba(0,0,0,.2);
-      font-family: Arial, sans-serif; font-size: 14px; font-weight: 700;
+      font-family: Arial, sans-serif; font-size: 13px; font-weight: 700;
       white-space: nowrap; cursor: pointer;
       opacity: 0; pointer-events: none;
+      transform: translateY(6px) scale(.96);
       transition: opacity .28s cubic-bezier(.25,.46,.45,.94),
                   transform .28s cubic-bezier(.25,.46,.45,.94);
     }
     #ajanhetki-pill.visible {
       opacity: 1; pointer-events: auto;
-      transform: translateX(-50%) translateY(0) scale(1);
+      transform: translateY(0) scale(1);
     }
     #ajanhetki-pill svg { width: 15px; height: 15px; flex-shrink: 0; }
     #ajanhetki-pill .ajanhetki-pill-label { color: #0C0243; }
     #ajanhetki-pill #ajanhetki-pill-time { color: #1266f1; }
 
-    /* Backdrop intentionally disabled: the map stays fully interactive behind
-       the open window, and panning the map collapses it back to the pill. */
-    #ajanhetki-float-backdrop { display: none; }
-
     #ajanhetki-float {
-      position: fixed;
-      top: max(16px, env(safe-area-inset-top));
-      left: 50%;
-      width: min(480px, calc(100vw - 20px));
-      z-index: 60;
+      position: absolute;
+      bottom: 0; left: 0;
+      width: min(480px, 100%);
+      z-index: 8;
       background: #fff; border-radius: 22px;
       box-shadow: 0 12px 40px rgba(0,0,0,.22);
       padding: 15px 18px 17px;
       font-family: Arial, sans-serif;
-      transform-origin: top center;
-      transform: translateX(-50%);
+      /* Grows from the pill, which sits at this box's bottom-left corner. */
+      transform-origin: bottom left;
+      transform: translateY(6px) scale(.06);
       opacity: 0; pointer-events: none;
-      will-change: transform, opacity, clip-path;
+      will-change: transform, opacity;
     }
-    /* Resting visible state — no clip, so the rounded corners and shadow show. */
-    #ajanhetki-float.open { opacity: 1; pointer-events: auto; }
-    /* Pullonhenki: the window streams out through a narrow neck at the pill
-       (the bottle mouth) — the neck opens and the body flares out and down,
-       so it never reads as a plain rectangle scaling. */
+    /* Resting visible state, once the genie-in has finished. */
+    #ajanhetki-float.open {
+      opacity: 1; pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+    /* Pullonhenki: width and height grow together as the window puffs UPWARD
+       out of the pill (gentle overshoot), and collapse back down into it. */
     #ajanhetki-float.opening {
-      animation: ajanhetki-genie-in .46s cubic-bezier(.22,1,.36,1) both;
+      animation: ajanhetki-genie-in .4s cubic-bezier(.34,1.56,.44,1) both;
     }
     #ajanhetki-float.closing {
-      animation: ajanhetki-genie-out .34s cubic-bezier(.55,0,.68,.19) both;
+      animation: ajanhetki-genie-out .26s cubic-bezier(.5,0,.85,.15) both;
       pointer-events: none;
     }
     @keyframes ajanhetki-genie-in {
-      0% {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-4px) scale(.12);
-        clip-path: polygon(47% 0%, 53% 0%, 61% 100%, 39% 100%);
-      }
-      40% {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0) scale(.8);
-        clip-path: polygon(26% 0%, 74% 0%, 84% 100%, 16% 100%);
-      }
-      72% {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0) scale(1.03);
-        clip-path: polygon(5% 0%, 95% 0%, 99% 100%, 1% 100%);
-      }
-      100% {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0) scale(1);
-        clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
-      }
+      0%   { opacity: 0; transform: translateY(6px) scale(.06); }
+      100% { opacity: 1; transform: translateY(0)   scale(1); }
     }
     @keyframes ajanhetki-genie-out {
-      0% {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0) scale(1);
-        clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
-      }
-      55% {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0) scale(.78);
-        clip-path: polygon(28% 0%, 72% 0%, 82% 100%, 18% 100%);
-      }
-      100% {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-4px) scale(.12);
-        clip-path: polygon(47% 0%, 53% 0%, 61% 100%, 39% 100%);
-      }
+      0%   { opacity: 1; transform: translateY(0)   scale(1); }
+      100% { opacity: 0; transform: translateY(6px) scale(.06); }
     }
     .ajanhetki-float-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .ajanhetki-float-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: .5px; }
@@ -3484,45 +3461,6 @@
       <path d="M12 2 L22 22 L12 18 L2 22 Z" fill="#0C0243" transform="rotate(45 12 12)"/>
     </svg>
   </button>
-
-  <!-- Ajanhetki pill: appears top-centre (between the burger menu and the
-       locate button) when a manual reference time is set and the filter sheet
-       is closed. Tapping it grows into the floating window below. -->
-  <button id="ajanhetki-pill" aria-label="Muokkaa ajanhetkeä">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#1266f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="9"/><path d="M12 7 V12 L15.5 14"/>
-    </svg>
-    <span class="ajanhetki-pill-label">Ajanhetki</span>
-    <span id="ajanhetki-pill-time">–</span>
-  </button>
-
-  <!-- Floating "Ajanhetki" window — the pill expands into this. Its drum shares
-       all reference-time state with the filter-sheet drum. -->
-  <div id="ajanhetki-float-backdrop"></div>
-  <div id="ajanhetki-float" role="dialog" aria-label="Ajanhetki">
-    <div class="ajanhetki-float-head">
-      <span class="ajanhetki-float-title">Ajanhetki</span>
-      <button id="ajanhetki-float-close" aria-label="Sulje">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
-          <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
-        </svg>
-      </button>
-    </div>
-    <div class="ajanhetki-float-body">
-      <div class="ajanhetki-float-left">
-        <div id="ref-time-value-2">–</div>
-        <div id="ref-time-day-2">nykyhetki</div>
-        <button id="ref-time-reset-2">Palauta nykyhetkeen</button>
-      </div>
-      <div class="drum-scroll-zone" id="ref-drum-zone-2">
-        <canvas id="ref-drum-canvas-2" width="52" height="80"></canvas>
-      </div>
-    </div>
-    <div class="ajanhetki-float-hint">
-      <div class="ah-hint-row"><span class="ah-bullet"></span><span>Vieritä rullaa säätääksesi ajanhetkeä, jolloin pysäköintialueet ovat <span class="ah-free">ilmaisia</span> tai <span class="ah-paid">maksullisia</span>.</span></div>
-      <div class="ah-hint-row"><span class="ah-bullet"></span><span>Huom! Tarkista aina ajantasainen tieto liikennemerkistä ennen pysäköintiä.</span></div>
-    </div>
-  </div>
 
   <!-- Dim layer that covers the strip of map visible to the right of the
        profile panel while it is open. Tapping the dim closes the profile. -->
@@ -4837,7 +4775,45 @@
 
   <div id="bottom-sheet">
     <div id="area-code-badge" style="display:none;position:absolute;top:16px;left:16px;z-index:5;background:#0C0243;color:white;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;padding:2px 8px;border-radius:5px;letter-spacing:0.3px;pointer-events:none;"></div>
-    <div id="osm-attribution" style="position:absolute;top:-16px;left:8px;z-index:5;font-family:Arial,sans-serif;font-size:10px;color:#000;pointer-events:none;transition:opacity 0.2s ease;">© OpenStreetMap</div>
+    <!-- Ajanhetki: anchored just above the sheet's top edge — where the
+         "© OpenStreetMap" credit used to sit — so it rides with the sheet.
+         The pill grows UPWARD into the floating window. The legally required
+         credit is still served by Mapbox's own attribution control on the map.
+         (Old credit, kept for reference:
+          <div id="osm-attribution" style="position:absolute;top:-16px;left:8px;z-index:5;font-family:Arial,sans-serif;font-size:10px;color:#000;pointer-events:none;transition:opacity 0.2s ease;">&copy; OpenStreetMap</div>) -->
+    <div id="ajanhetki-anchor">
+      <button id="ajanhetki-pill" aria-label="Muokkaa ajanhetkeä">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1266f1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="M12 7 V12 L15.5 14"/>
+        </svg>
+        <span class="ajanhetki-pill-label">Ajanhetki</span>
+        <span id="ajanhetki-pill-time">–</span>
+      </button>
+      <div id="ajanhetki-float" role="dialog" aria-label="Ajanhetki">
+        <div class="ajanhetki-float-head">
+          <span class="ajanhetki-float-title">Ajanhetki</span>
+          <button id="ajanhetki-float-close" aria-label="Sulje">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+              <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="ajanhetki-float-body">
+          <div class="ajanhetki-float-left">
+            <div id="ref-time-value-2">–</div>
+            <div id="ref-time-day-2">nykyhetki</div>
+            <button id="ref-time-reset-2">Palauta nykyhetkeen</button>
+          </div>
+          <div class="drum-scroll-zone" id="ref-drum-zone-2">
+            <canvas id="ref-drum-canvas-2" width="52" height="80"></canvas>
+          </div>
+        </div>
+        <div class="ajanhetki-float-hint">
+          <div class="ah-hint-row"><span class="ah-bullet"></span><span>Vieritä rullaa säätääksesi ajanhetkeä, jolloin pysäköintialueet ovat <span class="ah-free">ilmaisia</span> tai <span class="ah-paid">maksullisia</span>.</span></div>
+          <div class="ah-hint-row"><span class="ah-bullet"></span><span>Huom! Tarkista aina ajantasainen tieto liikennemerkistä ennen pysäköintiä.</span></div>
+        </div>
+      </div>
+    </div>
     <div id="zoom-indicator" style="position:absolute;top:8px;right:16px;z-index:5;color:#999;font-family:Arial,sans-serif;font-size:10px;pointer-events:none;"></div>
     <div id="drag-handle-area"><div id="drag-handle"></div><button id="filter-reset-btn" onclick="resetFilters()">Palauta</button><button id="filter-close-btn">✕</button></div>
     <div id="gps-warning">
@@ -15033,15 +15009,26 @@
         }
       }
     }
-    // © OpenStreetMap attribution: child of the sheet (moves with it), fades out
-    // once the sheet's top edge passes the screen midpoint, fully hidden when open.
+    // Ajanhetki anchor (formerly the © OpenStreetMap credit): child of the sheet,
+    // so it moves with it. Fades out once the sheet's top edge passes the screen
+    // midpoint, fully hidden when the sheet is open.
     function updateOsmOpacity(ty){
-      const el = document.getElementById('osm-attribution');
+      const el = document.getElementById('ajanhetki-anchor');
       if(!el) return;
       const fadeStart = sheet.clientHeight - 153;                     // fade begins once the sheet grows past 153px
       const fullOpen  = sheet.clientHeight - window.innerHeight * 0.8; // fully open
-      const o = (ty - fullOpen) / (fadeStart - fullOpen);
-      el.style.opacity = Math.max(0, Math.min(1, o));
+      const o = Math.max(0, Math.min(1, (ty - fullOpen) / (fadeStart - fullOpen)));
+      el.style.opacity = o;
+      // Once faded out the pill must stop catching taps (inline style beats the
+      // .visible class rule; clearing it hands control back to the class).
+      const pill = document.getElementById('ajanhetki-pill');
+      if (pill) pill.style.pointerEvents = (o < 0.05) ? 'none' : '';
+      // If the sheet is dragged up over an open window, collapse it back to the
+      // pill rather than letting it fade out while still "open".
+      if (o < 0.9) {
+        const fl = document.getElementById('ajanhetki-float');
+        if (fl && (fl.classList.contains('open') || fl.classList.contains('opening'))) closeAjanhetkiFloat();
+      }
     }
     let dragFromHandle=false;
     let filterContentScroll=false, _startScrollTop=0, fcDragging=false, _momentumRAF=null, _gestureStartY=0, _filterMoved=false;
