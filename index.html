@@ -3071,7 +3071,7 @@
       z-index: 8;
       background: #fff; border-radius: 22px;
       box-shadow: 0 12px 40px rgba(0,0,0,.22);
-      padding: 15px 18px 17px;
+      padding: 7px 14px 12px;
       font-family: Arial, sans-serif;
       /* Grows from the pill, which sits at this box's bottom-left corner. */
       transform-origin: bottom left;
@@ -3102,40 +3102,40 @@
       0%   { opacity: 1; transform: translateY(0)   scale(1); }
       100% { opacity: 0; transform: translateY(6px) scale(.06); }
     }
-    .ajanhetki-float-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .ajanhetki-float-title { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: .5px; }
-    #ajanhetki-float-close { width: 30px; height: 30px; margin: -6px -8px -4px 0; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .ajanhetki-float-title { display: block; font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+    /* × sits to the RIGHT of the drum, pinned to the top of the row. */
+    #ajanhetki-float-close { align-self: flex-start; flex-shrink: 0; width: 28px; height: 28px; margin: -3px -6px 0 0; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
     #ajanhetki-float-close:active { background: #eee; }
     #ajanhetki-float-close svg { width: 17px; height: 17px; }
-    .ajanhetki-float-body { display: flex; align-items: center; gap: 14px; }
-    .ajanhetki-float-left { flex: 1; }
+    .ajanhetki-float-body { display: flex; align-items: center; gap: 10px; }
+    .ajanhetki-float-left { flex: 1; min-width: 0; }
     #ref-time-value-2 { font-size: 26px; font-weight: bold; color: #0C0243; line-height: 1; font-family: Arial, sans-serif; transition: color .2s ease; }
     #ref-time-value-2.manual { color: #1266f1; }
-    #ref-time-day-2 { font-size: 13px; color: #888; margin-top: 5px; font-family: Arial, sans-serif; }
+    #ref-time-day-2 { font-size: 13px; color: #888; margin-top: 4px; font-family: Arial, sans-serif; }
     /* visibility (not display) so the link always reserves its space — otherwise
        the left column changes height and the clock jumps when "Palauta
        nykyhetkeen" appears/disappears. */
-    #ref-time-reset-2 { display: inline-block; visibility: hidden; margin-top: 9px; border: none; background: none; padding: 0; font-size: 13px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
+    #ref-time-reset-2 { display: inline-block; visibility: hidden; margin-top: 6px; border: none; background: none; padding: 0; font-size: 13px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
     #ref-time-reset-2.visible { visibility: visible; }
 
     /* Drag handle: same bar as the sheet's, but built from two halves so it can
        bend into a shallow "down" chevron at the largest size — signalling that
        the window can only shrink from here. */
-    #ajanhetki-handle-area { display: flex; justify-content: center; padding: 1px 0 9px; cursor: grab; touch-action: none; }
+    /* The whole window is the drag surface (see the JS), so the handle is purely
+       a visual affordance: always a shallow "pull me down" chevron, in the
+       medium size as well as the large one. */
+    #ajanhetki-handle-area { display: flex; justify-content: center; padding: 0 0 6px; cursor: grab; touch-action: none; }
     #ajanhetki-handle-area:active { cursor: grabbing; }
-    #ajanhetki-handle { position: relative; width: 44px; height: 4px; }
+    #ajanhetki-handle { position: relative; width: 44px; height: 7px; }
     #ajanhetki-handle span {
       position: absolute; top: 0; width: 24px; height: 4px;
       border-radius: 2px; background: #ddd;
-      transition: transform .28s cubic-bezier(.25,.46,.45,.94);
     }
-    #ajanhetki-handle span:first-child { left: 0;  transform-origin: left center; }
-    #ajanhetki-handle span:last-child  { right: 0; transform-origin: right center; }
-    #ajanhetki-float.size-large #ajanhetki-handle span:first-child { transform: rotate(9deg); }
-    #ajanhetki-float.size-large #ajanhetki-handle span:last-child  { transform: rotate(-9deg); }
+    #ajanhetki-handle span:first-child { left: 0;  transform-origin: left center;  transform: rotate(9deg); }
+    #ajanhetki-handle span:last-child  { right: 0; transform-origin: right center; transform: rotate(-9deg); }
 
     /* Medium size: the hint rows collapse away; the window keeps clock + drum. */
-    .ajanhetki-float-hint { overflow: hidden; max-height: 260px; opacity: 1; margin-top: 14px; font-size: 12px; color: #9a9a9a; line-height: 1.45; font-family: Arial, sans-serif; transition: max-height .32s cubic-bezier(.25,.46,.45,.94), opacity .22s ease, margin-top .32s cubic-bezier(.25,.46,.45,.94); }
+    .ajanhetki-float-hint { overflow: hidden; max-height: 260px; opacity: 1; margin-top: 11px; font-size: 12px; color: #9a9a9a; line-height: 1.45; font-family: Arial, sans-serif; transition: max-height .32s cubic-bezier(.25,.46,.45,.94), opacity .22s ease, margin-top .32s cubic-bezier(.25,.46,.45,.94); }
     #ajanhetki-float.size-medium .ajanhetki-float-hint { max-height: 0; opacity: 0; margin-top: 0; }
     .ah-hint-row { display: flex; align-items: flex-start; gap: 7px; }
     .ah-hint-row + .ah-hint-row { margin-top: 6px; }
@@ -4814,16 +4814,11 @@
       </button>
       <div id="ajanhetki-float" role="dialog" aria-label="Ajanhetki">
         <div id="ajanhetki-handle-area"><div id="ajanhetki-handle"><span></span><span></span></div></div>
-        <div class="ajanhetki-float-head">
-          <span class="ajanhetki-float-title">Ajanhetki</span>
-          <button id="ajanhetki-float-close" aria-label="Sulje">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
-              <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
-            </svg>
-          </button>
-        </div>
+        <!-- One tight row: clock column | drum | ×. Merging the old header row
+             into this one keeps the window short so more map stays visible. -->
         <div class="ajanhetki-float-body">
           <div class="ajanhetki-float-left">
+            <div class="ajanhetki-float-title">Ajanhetki</div>
             <div id="ref-time-value-2">–</div>
             <div id="ref-time-day-2">nykyhetki</div>
             <button id="ref-time-reset-2">Palauta nykyhetkeen</button>
@@ -4831,6 +4826,11 @@
           <div class="drum-scroll-zone" id="ref-drum-zone-2">
             <canvas id="ref-drum-canvas-2" width="52" height="80"></canvas>
           </div>
+          <button id="ajanhetki-float-close" aria-label="Sulje">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+              <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+            </svg>
+          </button>
         </div>
         <div class="ajanhetki-float-hint">
           <div class="ah-hint-row"><span class="ah-bullet"></span><span>Vieritä rullaa säätääksesi ajanhetkeä, jolloin pysäköintialueet ovat <span class="ah-free">ilmaisia</span> tai <span class="ah-paid">maksullisia</span>.</span></div>
@@ -13093,9 +13093,13 @@
       const rs = document.getElementById('ref-time-reset-2');
       if (rs) rs.addEventListener('click', () => { resetRefTime(); });
 
-      // ── Drag handle: medium ⇄ large, and medium → pill ─────────────────
-      const area = document.getElementById('ajanhetki-handle-area');
-      if (fl0 && area) {
+      // ── Resize drag: medium ⇄ large, and medium → pill ─────────────────
+      // The whole window is the drag surface — no need to grab the little handle
+      // precisely. Only the three real controls are carved out: the × button,
+      // the "Palauta nykyhetkeen" link, and the drum (which has its own drag).
+      if (fl0) {
+        const NO_DRAG = '#ajanhetki-float-close, #ref-time-reset-2, #ref-drum-zone-2';
+        const isControl = t => !!(t && t.closest && t.closest(NO_DRAG));
         let dragging = false, startY = 0, dy = 0;
         // Downward pulls follow the finger; upward is resisted, since large is
         // the ceiling (which is what the chevron handle is telling the user).
@@ -13120,11 +13124,11 @@
           }
           dy = 0;
         }
-        area.addEventListener('touchstart',  e => begin(e.touches[0].clientY), { passive: true });
-        area.addEventListener('touchmove',   e => move(e.touches[0].clientY),  { passive: true });
-        area.addEventListener('touchend',    end, { passive: true });
-        area.addEventListener('touchcancel', end, { passive: true });
-        area.addEventListener('mousedown',   e => { e.preventDefault(); begin(e.clientY); });
+        fl0.addEventListener('touchstart',  e => { if (isControl(e.target)) return; begin(e.touches[0].clientY); }, { passive: true });
+        fl0.addEventListener('touchmove',   e => move(e.touches[0].clientY),  { passive: true });
+        fl0.addEventListener('touchend',    end, { passive: true });
+        fl0.addEventListener('touchcancel', end, { passive: true });
+        fl0.addEventListener('mousedown',   e => { if (isControl(e.target)) return; e.preventDefault(); begin(e.clientY); });
         window.addEventListener('mousemove', e => { if (dragging) move(e.clientY); });
         window.addEventListener('mouseup',   () => { if (dragging) end(); });
       }
