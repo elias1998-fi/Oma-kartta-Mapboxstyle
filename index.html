@@ -3083,6 +3083,7 @@
     #ajanhetki-float.open {
       opacity: 1; pointer-events: auto;
       transform: translateY(0) scale(1);
+      transition: transform .3s cubic-bezier(.25,.46,.45,.94);
     }
     /* Pullonhenki: width and height grow together as the window puffs UPWARD
        out of the pill (gentle overshoot), and collapse back down into it. */
@@ -3111,9 +3112,31 @@
     #ref-time-value-2 { font-size: 26px; font-weight: bold; color: #0C0243; line-height: 1; font-family: Arial, sans-serif; transition: color .2s ease; }
     #ref-time-value-2.manual { color: #1266f1; }
     #ref-time-day-2 { font-size: 13px; color: #888; margin-top: 5px; font-family: Arial, sans-serif; }
-    #ref-time-reset-2 { display: none; margin-top: 9px; border: none; background: none; padding: 0; font-size: 13px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
-    #ref-time-reset-2.visible { display: inline-block; }
-    .ajanhetki-float-hint { margin-top: 14px; font-size: 12px; color: #9a9a9a; line-height: 1.45; font-family: Arial, sans-serif; }
+    /* visibility (not display) so the link always reserves its space — otherwise
+       the left column changes height and the clock jumps when "Palauta
+       nykyhetkeen" appears/disappears. */
+    #ref-time-reset-2 { display: inline-block; visibility: hidden; margin-top: 9px; border: none; background: none; padding: 0; font-size: 13px; font-weight: 600; color: #1266f1; cursor: pointer; font-family: Arial, sans-serif; text-decoration: underline; }
+    #ref-time-reset-2.visible { visibility: visible; }
+
+    /* Drag handle: same bar as the sheet's, but built from two halves so it can
+       bend into a shallow "down" chevron at the largest size — signalling that
+       the window can only shrink from here. */
+    #ajanhetki-handle-area { display: flex; justify-content: center; padding: 1px 0 9px; cursor: grab; touch-action: none; }
+    #ajanhetki-handle-area:active { cursor: grabbing; }
+    #ajanhetki-handle { position: relative; width: 44px; height: 4px; }
+    #ajanhetki-handle span {
+      position: absolute; top: 0; width: 24px; height: 4px;
+      border-radius: 2px; background: #ddd;
+      transition: transform .28s cubic-bezier(.25,.46,.45,.94);
+    }
+    #ajanhetki-handle span:first-child { left: 0;  transform-origin: left center; }
+    #ajanhetki-handle span:last-child  { right: 0; transform-origin: right center; }
+    #ajanhetki-float.size-large #ajanhetki-handle span:first-child { transform: rotate(9deg); }
+    #ajanhetki-float.size-large #ajanhetki-handle span:last-child  { transform: rotate(-9deg); }
+
+    /* Medium size: the hint rows collapse away; the window keeps clock + drum. */
+    .ajanhetki-float-hint { overflow: hidden; max-height: 260px; opacity: 1; margin-top: 14px; font-size: 12px; color: #9a9a9a; line-height: 1.45; font-family: Arial, sans-serif; transition: max-height .32s cubic-bezier(.25,.46,.45,.94), opacity .22s ease, margin-top .32s cubic-bezier(.25,.46,.45,.94); }
+    #ajanhetki-float.size-medium .ajanhetki-float-hint { max-height: 0; opacity: 0; margin-top: 0; }
     .ah-hint-row { display: flex; align-items: flex-start; gap: 7px; }
     .ah-hint-row + .ah-hint-row { margin-top: 6px; }
     .ah-bullet { flex-shrink: 0; width: 4px; height: 4px; border-radius: 50%; background: #333; margin-top: 5px; }
@@ -4790,6 +4813,7 @@
         <span id="ajanhetki-pill-time">–</span>
       </button>
       <div id="ajanhetki-float" role="dialog" aria-label="Ajanhetki">
+        <div id="ajanhetki-handle-area"><div id="ajanhetki-handle"><span></span><span></span></div></div>
         <div class="ajanhetki-float-head">
           <span class="ajanhetki-float-title">Ajanhetki</span>
           <button id="ajanhetki-float-close" aria-label="Sulje">
@@ -12963,24 +12987,69 @@
       }
       updateAjanhetkiPillVisibility();
     }
+    // ── Sheet-linked fade ────────────────────────────────────────────────
+    // The anchor rides with the sheet and fades as the sheet is opened, exactly
+    // like the old © OpenStreetMap credit did. Read from the sheet's REAL
+    // on-screen position each frame rather than the `currentY` variable: several
+    // code paths (closeFilter among them) move the sheet without updating
+    // currentY, which used to leave the pill stuck part-way faded.
+    var _ahFadeRAF = null, _ahLastTop = null;
+    function applyAjanhetkiFade(){
+      const el = document.getElementById('ajanhetki-anchor');
+      if (!el) return;
+      const top = sheet.getBoundingClientRect().top;
+      if (top === _ahLastTop) return;
+      _ahLastTop = top;
+      const visibleH  = Math.max(0, window.innerHeight - top);  // sheet height on screen
+      const fadeStart = 153;                                    // solid until the sheet grows past this
+      const fullOpen  = window.innerHeight * 0.8;               // gone once the sheet is fully open
+      const o = Math.max(0, Math.min(1, 1 - (visibleH - fadeStart) / (fullOpen - fadeStart)));
+      el.style.opacity = o;
+      // Once faded out, stop catching taps (inline style beats the class rules).
+      const dead = (o < 0.05) ? 'none' : '';
+      const pill = document.getElementById('ajanhetki-pill');
+      const fl   = document.getElementById('ajanhetki-float');
+      if (pill) pill.style.pointerEvents = dead;
+      if (fl)   fl.style.pointerEvents   = dead;
+    }
+    function ajanhetkiFadeLoop(){ applyAjanhetkiFade(); _ahFadeRAF = requestAnimationFrame(ajanhetkiFadeLoop); }
+    function startAjanhetkiFade(){ if (_ahFadeRAF == null) { _ahLastTop = null; ajanhetkiFadeLoop(); } }
+    function stopAjanhetkiFade(){ if (_ahFadeRAF != null) { cancelAnimationFrame(_ahFadeRAF); _ahFadeRAF = null; } }
+
+    // ── Pill / window sizing ─────────────────────────────────────────────
+    // Three sizes: pill (closed) → medium (clock + drum) → large (adds the hint
+    // rows). Tapping the pill opens it at medium; the drag handle moves between
+    // sizes and is the ONLY way to shrink it — map panning and "Palauta
+    // nykyhetkeen" no longer collapse it.
+    let ajanhetkiSize = 'medium';   // 'medium' | 'large'
+    function setAjanhetkiSize(sz){
+      const fl = document.getElementById('ajanhetki-float');
+      if (!fl) return;
+      ajanhetkiSize = sz;
+      fl.classList.toggle('size-large',  sz === 'large');
+      fl.classList.toggle('size-medium', sz === 'medium');
+    }
     // Pill shows while it is summoned (not dismissed), free-parking colouring is
     // on, the filter sheet is closed, and the window isn't already open.
     function updateAjanhetkiPillVisibility(){
       const pill = document.getElementById('ajanhetki-pill');
       if (!pill) return;
       const fl = document.getElementById('ajanhetki-float');
-      const floatOpen = !!(fl && fl.classList.contains('open'));
-      const show = !ajanhetkiDismissed && showFreeParking && !filterMode && !floatOpen;
-      pill.classList.toggle('visible', show);
+      const floatOpen = !!(fl && (fl.classList.contains('open') || fl.classList.contains('opening')));
+      const active = !ajanhetkiDismissed && showFreeParking && !filterMode;
+      pill.classList.toggle('visible', active && !floatOpen);
+      if (active) startAjanhetkiFade(); else stopAjanhetkiFade();
     }
     function openAjanhetkiFloat(){
       const fl = document.getElementById('ajanhetki-float');
       if (!fl) return;
       const pill = document.getElementById('ajanhetki-pill');
       if (pill) pill.classList.remove('visible');   // pill streams up into the window
+      fl.style.transition = ''; fl.style.transform = '';
       fl.classList.remove('closing');
       fl.classList.add('open');
       fl.classList.add('opening');   // plays genie-in; removed on animationend
+      setAjanhetkiSize('medium');    // opens at the medium size
       updateRefTimeUI();   // refresh mirror value / day / reset
       drawRefDrum();       // paint the floating drum
     }
@@ -12988,6 +13057,7 @@
       const fl = document.getElementById('ajanhetki-float');
       if (!fl) return;
       if (fl.classList.contains('open') || fl.classList.contains('opening')) {
+        fl.style.transition = ''; fl.style.transform = '';
         fl.classList.remove('open');
         fl.classList.remove('opening');
         fl.classList.add('closing');   // genie-retract, then hide on animationend
@@ -12997,13 +13067,19 @@
     (function wireAjanhetkiControls(){
       const pill = document.getElementById('ajanhetki-pill');
       if (pill) pill.addEventListener('click', openAjanhetkiFloat);
-      // Once the genie-retract finishes, drop the closing class so the window
-      // rests fully hidden.
       const fl0 = document.getElementById('ajanhetki-float');
+      // Once a genie animation finishes, drop its class so the resting state applies.
       if (fl0) fl0.addEventListener('animationend', (e) => {
         if (e.animationName === 'ajanhetki-genie-in')  fl0.classList.remove('opening');
         if (e.animationName === 'ajanhetki-genie-out') fl0.classList.remove('closing');
       });
+      // The pill and window are children of the sheet now, so their gestures must
+      // not bubble up and start a sheet drag.
+      const anchor = document.getElementById('ajanhetki-anchor');
+      if (anchor) {
+        anchor.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+        anchor.addEventListener('mousedown',  e => e.stopPropagation());
+      }
       // × fully dismisses the pill and returns the map to live ("nykyhetki")
       // colouring, so the map is never left tinted for a hidden manual time.
       const cl = document.getElementById('ajanhetki-float-close');
@@ -13012,17 +13088,45 @@
         resetRefTime();
         closeAjanhetkiFloat();
       });
-      // "Palauta nykyhetkeen" returns to live time but KEEPS the pill, which
-      // then reads "Nykyhetki HH:MM".
+      // "Palauta nykyhetkeen" returns to live time and LEAVES the window open;
+      // the label simply flips to "Nykyhetki HH:MM".
       const rs = document.getElementById('ref-time-reset-2');
-      if (rs) rs.addEventListener('click', () => { resetRefTime(); closeAjanhetkiFloat(); });
-      // Panning / zooming the map collapses the open window back to the pill;
-      // the chosen time stays in effect.
-      if (typeof map !== 'undefined' && map && map.on) {
-        map.on('movestart', () => {
-          const fl = document.getElementById('ajanhetki-float');
-          if (fl && fl.classList.contains('open')) closeAjanhetkiFloat();
-        });
+      if (rs) rs.addEventListener('click', () => { resetRefTime(); });
+
+      // ── Drag handle: medium ⇄ large, and medium → pill ─────────────────
+      const area = document.getElementById('ajanhetki-handle-area');
+      if (fl0 && area) {
+        let dragging = false, startY = 0, dy = 0;
+        // Downward pulls follow the finger; upward is resisted, since large is
+        // the ceiling (which is what the chevron handle is telling the user).
+        const damp = v => (v >= 0 ? Math.min(v, 70) : -Math.min(-v * 0.45, 26));
+        function begin(y){ dragging = true; startY = y; dy = 0; fl0.style.transition = 'none'; }
+        function move(y){
+          if (!dragging) return;
+          dy = y - startY;
+          fl0.style.transform = `translateY(${damp(dy)}px) scale(1)`;
+        }
+        function end(){
+          if (!dragging) return;
+          dragging = false;
+          fl0.style.transition = '';   // hand the snap-back to the .open transition
+          fl0.style.transform  = '';
+          const TH = 26;
+          if (dy > TH) {
+            if (ajanhetkiSize === 'large') setAjanhetkiSize('medium');
+            else closeAjanhetkiFloat();          // medium → back down to the pill
+          } else if (dy < -TH && ajanhetkiSize === 'medium') {
+            setAjanhetkiSize('large');
+          }
+          dy = 0;
+        }
+        area.addEventListener('touchstart',  e => begin(e.touches[0].clientY), { passive: true });
+        area.addEventListener('touchmove',   e => move(e.touches[0].clientY),  { passive: true });
+        area.addEventListener('touchend',    end, { passive: true });
+        area.addEventListener('touchcancel', end, { passive: true });
+        area.addEventListener('mousedown',   e => { e.preventDefault(); begin(e.clientY); });
+        window.addEventListener('mousemove', e => { if (dragging) move(e.clientY); });
+        window.addEventListener('mouseup',   () => { if (dragging) end(); });
       }
     })();
 
@@ -15009,27 +15113,11 @@
         }
       }
     }
-    // Ajanhetki anchor (formerly the © OpenStreetMap credit): child of the sheet,
-    // so it moves with it. Fades out once the sheet's top edge passes the screen
-    // midpoint, fully hidden when the sheet is open.
-    function updateOsmOpacity(ty){
-      const el = document.getElementById('ajanhetki-anchor');
-      if(!el) return;
-      const fadeStart = sheet.clientHeight - 153;                     // fade begins once the sheet grows past 153px
-      const fullOpen  = sheet.clientHeight - window.innerHeight * 0.8; // fully open
-      const o = Math.max(0, Math.min(1, (ty - fullOpen) / (fadeStart - fullOpen)));
-      el.style.opacity = o;
-      // Once faded out the pill must stop catching taps (inline style beats the
-      // .visible class rule; clearing it hands control back to the class).
-      const pill = document.getElementById('ajanhetki-pill');
-      if (pill) pill.style.pointerEvents = (o < 0.05) ? 'none' : '';
-      // If the sheet is dragged up over an open window, collapse it back to the
-      // pill rather than letting it fade out while still "open".
-      if (o < 0.9) {
-        const fl = document.getElementById('ajanhetki-float');
-        if (fl && (fl.classList.contains('open') || fl.classList.contains('opening'))) closeAjanhetkiFloat();
-      }
-    }
+    // Legacy hook: several sheet-position code paths still call this with the
+    // sheet's target translateY. The real work is done by applyAjanhetkiFade(),
+    // which reads the sheet's actual on-screen position, so the argument is
+    // ignored — this just forces an immediate recompute.
+    function updateOsmOpacity(){ _ahLastTop = null; applyAjanhetkiFade(); }
     let dragFromHandle=false;
     let filterContentScroll=false, _startScrollTop=0, fcDragging=false, _momentumRAF=null, _gestureStartY=0, _filterMoved=false;
     const dragHandleArea=document.getElementById('drag-handle-area');
