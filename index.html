@@ -1582,7 +1582,9 @@
        but dark-blue text on white with a thin dark-blue outline. Sits just left
        of the ✕, on the same line as the "Suodata karttanäkymää" title. Hidden
        until a filter control differs from its app-open default. */
-    #filter-reset-btn { position: absolute; right: 66px; top: 17px; height: 26px; padding: 0 14px; background: var(--tp-orange); border: 1px solid var(--tp-orange); border-radius: 13px; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; font-family: Arial, sans-serif; display: none; align-items: center; justify-content: center; z-index: 5; }
+    /* top:11 + height:26 centres at 24px — the same centre line as
+       #filter-close-btn (top:10 + height:28). */
+    #filter-reset-btn { position: absolute; right: 66px; top: 11px; height: 26px; padding: 0 14px; background: var(--tp-orange); border: 1px solid var(--tp-orange); border-radius: 13px; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; font-family: Arial, sans-serif; display: none; align-items: center; justify-content: center; z-index: 5; }
     #filter-reset-btn.visible { display: inline-flex; }
     #filter-reset-btn:active { background: var(--tp-orange-dark); border-color: var(--tp-orange-dark); }
     #sheet-normal { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
@@ -12364,7 +12366,11 @@
     // sub-control checks add robustness and never fire at the default state.
     function isFilterModified(){
       const on = id => { const e = document.getElementById(id); return !!(e && e.checked); };
-      if (on('toggle-free-parking'))   return true;
+      // Free parking only counts once the terms are actually accepted — until
+      // then the box is merely ticked and the terms panel is waiting, so nothing
+      // has been applied to the map yet. (The other two toggles apply straight
+      // away, so they count as soon as they're switched on.)
+      if (on('toggle-free-parking') && freeTermsAccepted) return true;
       if (on('toggle-maxtime-filter')) return true;
       if (on('toggle-ev-charging'))    return true;
       // Max-time range stays applied even if its toggle is later switched off.
